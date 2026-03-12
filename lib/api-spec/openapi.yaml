@@ -506,6 +506,11 @@ components:
           type: string
         code:
           type: string
+        children:
+          type: array
+          description: Optional nested cascade. Present when this node is a branch (e.g. Substrate → Brand → Colour).
+          items:
+            $ref: "#/components/schemas/CribbCode"
       required:
         - index
         - label

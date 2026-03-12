@@ -445,7 +445,7 @@ export const DEFAULT_FITOUT_SECTIONS = FITOUT_SECTIONS;
 // ── Routes ───────────────────────────────────────────────────────────────────
 
 router.get("/buildings/catalogue", async (_req, res) => {
-  let fitoutSections: typeof FITOUT_SECTIONS = FITOUT_SECTIONS;
+  let fitoutSections: unknown = FITOUT_SECTIONS;
   try {
     const row = await db.select().from(settingsTable).where(eq(settingsTable.id, "default")).then(r => r[0]);
     if (row?.fitoutCatalogueJson) {
@@ -453,7 +453,9 @@ router.get("/buildings/catalogue", async (_req, res) => {
     }
   } catch { /* fall back to hardcoded */ }
 
-  const data = GetBuildingsCatalogueResponse.parse({
+  // fitoutSections is served raw (not through Zod) so that recursive `children`
+  // on CribbCode nodes are preserved rather than stripped by the strict schema.
+  res.json({
     designs: DESIGNS,
     sizes: SIZES,
     sipThicknesses: SIP_THICKNESSES,
@@ -461,7 +463,6 @@ router.get("/buildings/catalogue", async (_req, res) => {
     standardLengths: STANDARD_LENGTHS,
     fitoutSections,
   });
-  res.json(data);
 });
 
 router.post("/buildings/generate", async (req, res) => {

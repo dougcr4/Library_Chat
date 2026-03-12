@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
-type CribbCode = { index: number; label: string; code: string };
+type CribbCode = { index: number; label: string; code: string; children?: CribbCode[] };
 type Product   = { id: string; code: string; name: string; cribbCodes: CribbCode[] };
 type Option    = { id: string; code: string; name: string; products: Product[] };
 type Section   = { id: string; code: string; name: string; options: Option[] };
@@ -21,25 +21,98 @@ function uid(prefix = "x"): string {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function CribbRow({
-  cc, onChange, onDelete,
-}: { cc: CribbCode; onChange: (p: Partial<CribbCode>) => void; onDelete: () => void }) {
+/** Recursive cribb-code tree editor. Any node can have children, making the cascade arbitrarily deep. */
+function CribbTree({
+  nodes, onChange, depth = 0,
+}: {
+  nodes: CribbCode[];
+  onChange: (updated: CribbCode[]) => void;
+  depth?: number;
+}) {
+  const updateNode = (idx: number, fn: (n: CribbCode) => CribbCode) =>
+    onChange(nodes.map((n, i) => i === idx ? fn(n) : n));
+
+  const deleteNode = (idx: number) =>
+    onChange(nodes.filter((_, i) => i !== idx).map((n, i) => ({ ...n, index: i + 1 })));
+
+  const addSibling = () =>
+    onChange([...nodes, {
+      index: nodes.length + 1,
+      label: depth === 0 ? "New Variant" : "New Option",
+      code: `NEW-${Date.now().toString(36).slice(-4).toUpperCase()}`,
+    }]);
+
+  const addChild = (idx: number) => {
+    const parent = nodes[idx];
+    const children = parent.children ?? [];
+    updateNode(idx, n => ({
+      ...n,
+      children: [...children, {
+        index: children.length + 1,
+        label: "New Option",
+        code: `${parent.code}.${children.length + 1}`,
+      }],
+    }));
+  };
+
   return (
-    <div className="flex items-center gap-2 py-0.5">
-      <GripVertical className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-      <span className="text-[9px] font-mono text-muted-foreground w-36 shrink-0 truncate" title={cc.code}>{cc.code}</span>
-      <Input
-        value={cc.label}
-        onChange={e => onChange({ label: e.target.value })}
-        className="h-6 text-xs flex-1 min-w-0"
-        placeholder="Colour / variant name…"
-      />
+    <div className={depth > 0 ? "ml-3 pl-3 border-l border-border/60 mt-0.5" : ""}>
+      <div className="space-y-0.5">
+        {nodes.map((cc, idx) => (
+          <div key={cc.code + idx}>
+            <div className="flex items-center gap-2 py-0.5">
+              <GripVertical className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+              <span
+                className="text-[9px] font-mono text-muted-foreground shrink-0 truncate"
+                style={{ width: `${Math.max(80, 128 - depth * 16)}px` }}
+                title={cc.code}
+              >
+                {cc.code}
+              </span>
+              <Input
+                value={cc.label}
+                onChange={e => updateNode(idx, n => ({ ...n, label: e.target.value }))}
+                className="h-6 text-xs flex-1 min-w-0"
+                placeholder={depth === 0 ? "Variant / colour name…" : "Option name…"}
+              />
+              {cc.children && cc.children.length > 0 && (
+                <span className="text-[9px] text-primary/70 shrink-0 whitespace-nowrap">
+                  {cc.children.length} sub
+                </span>
+              )}
+              <button
+                onClick={() => addChild(idx)}
+                title="Add child option (deeper cascade level)"
+                className="p-1 text-green-500 hover:text-green-700 rounded transition-colors shrink-0"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => deleteNode(idx)}
+                title="Delete"
+                className="p-1 text-red-400 hover:text-red-600 rounded transition-colors shrink-0"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+
+            {cc.children && cc.children.length > 0 && (
+              <CribbTree
+                nodes={cc.children}
+                onChange={updated => updateNode(idx, n => ({ ...n, children: updated }))}
+                depth={depth + 1}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
       <button
-        onClick={onDelete}
-        className="p-1 text-red-400 hover:text-red-600 rounded transition-colors shrink-0"
-        title="Delete variant"
+        onClick={addSibling}
+        className="flex items-center gap-1 text-[9px] text-primary mt-1.5 px-1 py-0.5 hover:text-primary/80 transition-colors"
       >
-        <Trash2 className="w-3 h-3" />
+        <Plus className="w-3 h-3" />
+        Add {depth === 0 ? "variant" : "sub-option"}
       </button>
     </div>
   );
@@ -47,16 +120,10 @@ function CribbRow({
 
 function ProductCard({
   product, onChange, onDelete,
-  sIdx, oIdx, pIdx,
-  onCribbChange, onCribbDelete, onCribbAdd,
 }: {
   product: Product;
   onChange: (p: Partial<Product>) => void;
   onDelete: () => void;
-  sIdx: number; oIdx: number; pIdx: number;
-  onCribbChange: (cIdx: number, p: Partial<CribbCode>) => void;
-  onCribbDelete: (cIdx: number) => void;
-  onCribbAdd: () => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -90,27 +157,12 @@ function ProductCard({
       {open && (
         <div className="px-3 pb-3 border-t border-border bg-muted/10">
           <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-2 mb-1.5">
-            Variants / Colours
+            Variants / Options
           </p>
-          <div className="space-y-0.5">
-            {product.cribbCodes.map((cc, cIdx) => (
-              <CribbRow
-                key={cc.code}
-                cc={cc}
-                onChange={p => onCribbChange(cIdx, p)}
-                onDelete={() => onCribbDelete(cIdx)}
-              />
-            ))}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-2 h-6 text-[10px] text-primary px-2"
-            onClick={onCribbAdd}
-          >
-            <Plus className="w-3 h-3 mr-1" />
-            Add Variant
-          </Button>
+          <CribbTree
+            nodes={product.cribbCodes}
+            onChange={updated => onChange({ cribbCodes: updated })}
+          />
         </div>
       )}
     </div>
@@ -121,7 +173,6 @@ function OptionBlock({
   option, sIdx, oIdx,
   onNameChange, onDelete,
   onProductChange, onProductDelete, onProductAdd,
-  onCribbChange, onCribbDelete, onCribbAdd,
 }: {
   option: Option; sIdx: number; oIdx: number;
   onNameChange: (name: string) => void;
@@ -129,9 +180,6 @@ function OptionBlock({
   onProductChange: (pIdx: number, p: Partial<Product>) => void;
   onProductDelete: (pIdx: number) => void;
   onProductAdd: () => void;
-  onCribbChange: (pIdx: number, cIdx: number, p: Partial<CribbCode>) => void;
-  onCribbDelete: (pIdx: number, cIdx: number) => void;
-  onCribbAdd: (pIdx: number) => void;
 }) {
   const [open, setOpen] = useState(true);
   return (
@@ -163,14 +211,8 @@ function OptionBlock({
             <ProductCard
               key={product.id}
               product={product}
-              sIdx={sIdx}
-              oIdx={oIdx}
-              pIdx={pIdx}
               onChange={p => onProductChange(pIdx, p)}
               onDelete={() => onProductDelete(pIdx)}
-              onCribbChange={(cIdx, p) => onCribbChange(pIdx, cIdx, p)}
-              onCribbDelete={(cIdx) => onCribbDelete(pIdx, cIdx)}
-              onCribbAdd={() => onCribbAdd(pIdx)}
             />
           ))}
           <Button
@@ -296,40 +338,8 @@ export default function AdminPage() {
     }));
   };
 
-  // ── Cribb code mutations ────────────────────────────────────────────────────
-
-  const updateCribb = (sIdx: number, oIdx: number, pIdx: number, cIdx: number, patch: Partial<CribbCode>) =>
-    mutate(prev => prev.map((s, i) => i !== sIdx ? s : {
-      ...s, options: s.options.map((o, j) => j !== oIdx ? o : {
-        ...o, products: o.products.map((p, k) => k !== pIdx ? p : {
-          ...p, cribbCodes: p.cribbCodes.map((c, l) => l === cIdx ? { ...c, ...patch } : c),
-        }),
-      }),
-    }));
-
-  const deleteCribb = (sIdx: number, oIdx: number, pIdx: number, cIdx: number) =>
-    mutate(prev => prev.map((s, i) => i !== sIdx ? s : {
-      ...s, options: s.options.map((o, j) => j !== oIdx ? o : {
-        ...o, products: o.products.map((p, k) => k !== pIdx ? p : {
-          ...p, cribbCodes: p.cribbCodes
-            .filter((_, l) => l !== cIdx)
-            .map((c, l) => ({ ...c, index: l + 1 })),
-        }),
-      }),
-    }));
-
-  const addCribb = (sIdx: number, oIdx: number, pIdx: number) =>
-    mutate(prev => prev.map((s, i) => i !== sIdx ? s : {
-      ...s, options: s.options.map((o, j) => j !== oIdx ? o : {
-        ...o, products: o.products.map((p, k) => k !== pIdx ? p : {
-          ...p, cribbCodes: [...p.cribbCodes, {
-            index: p.cribbCodes.length + 1,
-            label: "New Variant",
-            code: `${p.code}.${p.cribbCodes.length + 1}`,
-          }],
-        }),
-      }),
-    }));
+  // CribbTree mutations are handled internally by the CribbTree component —
+  // they bubble up as updateProduct(sIdx, oIdx, pIdx, { cribbCodes: updated }).
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -386,8 +396,10 @@ export default function AdminPage() {
         <div className="mb-6 p-4 bg-primary/5 border border-primary/15 rounded-xl">
           <h2 className="text-sm font-semibold text-primary mb-1">Buildings Fit-out Catalogue</h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Edit the four fit-out sections, their options, products and colour / variant names shown to customers.
-            Reference codes (DDL-xxx) are kept for back-end configuration — only the display names are edited here.
+            Edit the fit-out sections, options, products and variants shown to customers.
+            Each product's variants can be flat (e.g. 12 colours) or nested to any depth (e.g. Substrate → Brand → Colour).
+            Use the <strong className="font-semibold">+</strong> button next to any variant to add a child level beneath it.
+            Reference codes (DDL-xxx) are kept for back-end use — only display names need editing.
             Changes take effect in the designer immediately after saving.
           </p>
         </div>
@@ -440,9 +452,6 @@ export default function AdminPage() {
                         onProductChange={(pIdx, p) => updateProduct(sIdx, oIdx, pIdx, p)}
                         onProductDelete={(pIdx) => deleteProduct(sIdx, oIdx, pIdx)}
                         onProductAdd={() => addProduct(sIdx, oIdx)}
-                        onCribbChange={(pIdx, cIdx, p) => updateCribb(sIdx, oIdx, pIdx, cIdx, p)}
-                        onCribbDelete={(pIdx, cIdx) => deleteCribb(sIdx, oIdx, pIdx, cIdx)}
-                        onCribbAdd={(pIdx) => addCribb(sIdx, oIdx, pIdx)}
                       />
                     ))}
                     <Button

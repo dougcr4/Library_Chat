@@ -10,4 +10,6 @@ export interface CribbCode {
   index: number;
   label: string;
   code: string;
+  /** Optional nested cascade — present when this node is a branch (e.g. Substrate → Brand → Colour) */
+  children?: CribbCode[];
 }

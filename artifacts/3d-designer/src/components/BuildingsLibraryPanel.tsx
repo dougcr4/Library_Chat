@@ -5,6 +5,31 @@ import { useDesignerContext, useBuildingsCatalogue } from "@/hooks/useDesigner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useRef, useEffect, useCallback } from "react";
 
+// ── CribbNode type & helpers (recursive cascade) ────────────────────────────
+
+type CribbNode = {
+  index: number;
+  label: string;
+  code: string;
+  children?: CribbNode[];
+};
+
+function isLeaf(cc: CribbNode): boolean {
+  return !cc.children || cc.children.length === 0;
+}
+
+/** Returns the full path from root to the node with targetCode, or [] if not found */
+function findPathToCode(nodes: CribbNode[], targetCode: string): CribbNode[] {
+  for (const node of nodes) {
+    if (node.code === targetCode) return [node];
+    if (node.children && node.children.length > 0) {
+      const sub = findPathToCode(node.children, targetCode);
+      if (sub.length > 0) return [node, ...sub];
+    }
+  }
+  return [];
+}
+
 // ── Cascading dropdown (used for Shell Design, Size, SIP) ───────────────────
 
 function DropdownSelector({
@@ -98,7 +123,7 @@ function FitoutOptionRow({
   onSelect,
   onClear,
 }: {
-  option: { id: string; name: string; products: { id: string; name: string; cribbCodes: { code: string; label: string }[] }[] };
+  option: { id: string; name: string; products: { id: string; name: string; cribbCodes: CribbNode[] }[] };
   sectionId: string;
   selectedProductId: string | null;
   selectedCribbCode: string | null;
@@ -106,26 +131,64 @@ function FitoutOptionRow({
   onClear: () => void;
 }) {
   const selectedProduct = option.products.find(p => p.id === selectedProductId);
-  const hasCribbCodes = selectedProduct && selectedProduct.cribbCodes.length > 1;
+
+  // cascadePath = branch nodes selected above the current visible level
+  const [cascadePath, setCascadePath] = useState<CribbNode[]>([]);
+
+  // Reconstruct path whenever product or externally-stored code changes
+  useEffect(() => {
+    if (!selectedProduct || !selectedCribbCode) { setCascadePath([]); return; }
+    const full = findPathToCode(selectedProduct.cribbCodes as CribbNode[], selectedCribbCode);
+    setCascadePath(full.slice(0, -1)); // branches only — leaf is the stored code
+  }, [selectedProduct?.id, selectedCribbCode]);
+
+  // Nodes visible at the current cascade level
+  const currentNodes: CribbNode[] =
+    cascadePath.length === 0
+      ? (selectedProduct?.cribbCodes ?? []) as CribbNode[]
+      : (cascadePath[cascadePath.length - 1].children ?? []);
+
+  const showCascade = !!selectedProduct && selectedProduct.cribbCodes.length > 0;
+
+  const handleProductClick = (product: typeof option.products[0]) => {
+    if (product.id === selectedProductId) { onClear(); setCascadePath([]); return; }
+    setCascadePath([]);
+    const nodes = product.cribbCodes as CribbNode[];
+    // Auto-select only when there's exactly one leaf at root level — otherwise wait for cascade
+    if (nodes.length === 1 && isLeaf(nodes[0])) {
+      onSelect(product.id, nodes[0].code);
+    } else {
+      onSelect(product.id, null);
+    }
+  };
+
+  const handleNodeClick = (cc: CribbNode) => {
+    if (!isLeaf(cc)) {
+      setCascadePath(prev => [...prev, cc]); // go deeper
+    } else {
+      onSelect(selectedProduct!.id, cc.code); // final pick
+    }
+  };
+
+  const goBackTo = (idx: number) => setCascadePath(prev => prev.slice(0, idx));
+
+  // The leaf that's currently the stored selection
+  const selectedLeaf = selectedProduct && selectedCribbCode
+    ? findPathToCode(selectedProduct.cribbCodes as CribbNode[], selectedCribbCode).at(-1) ?? null
+    : null;
 
   return (
     <div className="space-y-1.5">
       <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{option.name}</p>
 
-      {/* Product buttons — inline row, wraps if needed */}
+      {/* ── Product buttons ── */}
       <div className="flex flex-wrap gap-1.5">
         {option.products.map(product => {
           const isSelected = product.id === selectedProductId;
           return (
             <button
               key={product.id}
-              onClick={() => {
-                if (isSelected) {
-                  onClear();
-                } else {
-                  onSelect(product.id, product.cribbCodes.length > 0 ? product.cribbCodes[0].code : null);
-                }
-              }}
+              onClick={() => handleProductClick(product)}
               className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-all leading-tight ${
                 isSelected
                   ? "bg-primary text-primary-foreground border-primary shadow-sm"
@@ -138,24 +201,55 @@ function FitoutOptionRow({
         })}
       </div>
 
-      {/* Cribb codes / colour variants — only shown when a product with variants is selected */}
-      {hasCribbCodes && (
-        <div className="pl-1 flex flex-wrap gap-1 animate-in fade-in duration-150">
-          <p className="w-full text-[9px] text-muted-foreground italic mb-0.5">Variant / Colour:</p>
-          {selectedProduct.cribbCodes.map(cc => (
-            <button
-              key={cc.code}
-              title={cc.code}
-              onClick={() => onSelect(selectedProduct.id, cc.code)}
-              className={`px-2.5 py-1 rounded text-[10px] border transition-all font-medium ${
-                selectedCribbCode === cc.code
-                  ? "bg-primary/20 border-primary text-primary font-bold ring-1 ring-primary"
-                  : "bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              {cc.label}
-            </button>
-          ))}
+      {/* ── Cascade tier ── */}
+      {showCascade && (
+        <div className="pl-1 space-y-1 animate-in fade-in duration-150">
+          {/* Breadcrumb trail */}
+          {(cascadePath.length > 0 || selectedLeaf) && (
+            <div className="flex flex-wrap items-center gap-0.5 text-[9px] text-muted-foreground mb-0.5">
+              <button onClick={() => goBackTo(0)} className="hover:text-foreground hover:underline">
+                {selectedProduct!.name}
+              </button>
+              {cascadePath.map((cc, i) => (
+                <span key={cc.code} className="flex items-center gap-0.5">
+                  <span className="opacity-50">›</span>
+                  <button onClick={() => goBackTo(i + 1)} className="hover:text-foreground hover:underline">
+                    {cc.label}
+                  </button>
+                </span>
+              ))}
+              {selectedLeaf && cascadePath.length > 0 && (
+                <span className="flex items-center gap-0.5">
+                  <span className="opacity-50">›</span>
+                  <span className="text-primary font-semibold">{selectedLeaf.label}</span>
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Current level option buttons */}
+          {currentNodes.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {currentNodes.map(cc => {
+                const isInPath = cascadePath.some(p => p.code === cc.code);
+                const isChosen = selectedCribbCode === cc.code;
+                return (
+                  <button
+                    key={cc.code}
+                    title={cc.code}
+                    onClick={() => handleNodeClick(cc)}
+                    className={`px-2.5 py-1 rounded text-[10px] border transition-all font-medium ${
+                      isChosen || isInPath
+                        ? "bg-primary/20 border-primary text-primary font-bold ring-1 ring-primary"
+                        : "bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    {cc.label}{!isLeaf(cc) ? " ›" : ""}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
