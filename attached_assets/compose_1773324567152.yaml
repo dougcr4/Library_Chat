@@ -1,0 +1,63 @@
+services:
+  ollama:
+    image: ollama/ollama:0.17.0
+    container_name: ollama
+    volumes:
+      - /home/douglas/DockerProjects/LLM-3D/3D-Mod-file/models:/root/.ollama/models
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+              
+  qdrant:
+    image: qdrant/qdrant:v1.13.0
+    container_name: qdrant
+    ports:
+      - "6332:6333"
+    volumes:
+      - /home/douglas/DockerProjects/LLM-3D/qdrant_data:/qdrant/storage
+
+  open-webui-3d:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui-3d
+    ports:
+      - "3001:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - VECTOR_DB=qdrant
+      - QDRANT_URI=http://qdrant:6333
+      - HF_TOKEN=hf_YourActualTokenHere123456789
+    volumes:
+      - open-webui-data:/app/backend/data
+    depends_on:
+      - ollama
+      - qdrant
+
+  jupyterlab:
+    image: bwalter42/jupyter_cadquery:2.2.0
+    container_name: jupyterlab
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_TOKEN=douglas-3d
+    volumes:
+      - /home/douglas/DockerProjects/LLM-3D/shared_designs:/home/cq/work
+
+  cadquery-viewer:
+    image: cadquery/cadquery-server:latest
+    container_name: cadquery-viewer
+    ports:
+      - "5000:5000"
+    volumes:
+      - /home/douglas/DockerProjects/LLM-3D/shared_designs:/data
+    command: ["run", "/data"] 
+
+
+
+volumes:
+  open-webui-data:
