@@ -69,6 +69,8 @@ export interface SipThickness {
   totalMm: number;
   osbMm: number;
   epsMm: number;
+  weightKg: number;
+  uValue: number;
   label: string;
 }
 

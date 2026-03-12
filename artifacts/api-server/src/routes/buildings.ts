@@ -14,12 +14,16 @@ const router: IRouter = Router();
 
 const STANDARD_LENGTHS = [3600, 4200, 4800, 5100, 5400, 6000];
 
+// Source: SIPs_Timber__info.pdf — SIP standard width 1222mm, lengths 2440/3050mm
+// OSB figure is total both faces (2 × 11mm); EPS is core thickness
 const SIP_THICKNESSES = [
-  { id: "sip-97",  totalMm: 97,  osbMm: 22, epsMm: 75,  label: "97mm (OSB 22 + EPS 75)"  },
-  { id: "sip-122", totalMm: 122, osbMm: 22, epsMm: 100, label: "122mm (OSB 22 + EPS 100)" },
-  { id: "sip-142", totalMm: 142, osbMm: 22, epsMm: 120, label: "142mm (OSB 22 + EPS 120)" },
-  { id: "sip-162", totalMm: 162, osbMm: 22, epsMm: 140, label: "162mm (OSB 22 + EPS 140)" },
-  { id: "sip-182", totalMm: 182, osbMm: 22, epsMm: 160, label: "182mm (OSB 22 + EPS 160)" },
+  { id: "sip-97",  totalMm: 97,  osbMm: 22, epsMm: 75,  weightKg: 12.47, uValue: 0.25, label: "97mm  (OSB 22 + EPS 75)"  },
+  { id: "sip-119", totalMm: 119, osbMm: 22, epsMm: 97,  weightKg: 15.30, uValue: 0.31, label: "119mm (OSB 22 + EPS 97)"  },
+  { id: "sip-144", totalMm: 144, osbMm: 22, epsMm: 122, weightKg: 16.30, uValue: 0.25, label: "144mm (OSB 22 + EPS 122)" },
+  { id: "sip-169", totalMm: 169, osbMm: 22, epsMm: 147, weightKg: 17.40, uValue: 0.21, label: "169mm (OSB 22 + EPS 147)" },
+  { id: "sip-194", totalMm: 194, osbMm: 22, epsMm: 172, weightKg: 18.40, uValue: 0.18, label: "194mm (OSB 22 + EPS 172)" },
+  { id: "sip-219", totalMm: 219, osbMm: 22, epsMm: 197, weightKg: 19.40, uValue: 0.15, label: "219mm (OSB 22 + EPS 197)" },
+  { id: "sip-229", totalMm: 229, osbMm: 22, epsMm: 207, weightKg: 21.01, uValue: 0.11, label: "229mm (OSB 22 + EPS 207)" },
 ];
 
 const TIMBER_SIZES = [

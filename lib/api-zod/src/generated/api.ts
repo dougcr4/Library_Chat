@@ -123,6 +123,8 @@ export const GetBuildingsCatalogueResponse = zod.object({
       totalMm: zod.number(),
       osbMm: zod.number(),
       epsMm: zod.number(),
+      weightKg: zod.number(),
+      uValue: zod.number(),
       label: zod.string(),
     }),
   ),

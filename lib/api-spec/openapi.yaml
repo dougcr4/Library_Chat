@@ -399,6 +399,10 @@ components:
           type: integer
         epsMm:
           type: integer
+        weightKg:
+          type: number
+        uValue:
+          type: number
         label:
           type: string
       required:
@@ -406,6 +410,8 @@ components:
         - totalMm
         - osbMm
         - epsMm
+        - weightKg
+        - uValue
         - label
 
     TimberSize:

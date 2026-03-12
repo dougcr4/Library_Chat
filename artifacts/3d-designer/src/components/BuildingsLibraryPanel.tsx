@@ -145,7 +145,7 @@ export default function BuildingsLibraryPanel() {
   const sipOptions = catalogue.sipThicknesses.map(s => ({
     id: s.id,
     label: s.label,
-    sub: `${s.osbMm}mm OSB + ${s.epsMm}mm EPS core`,
+    sub: `${s.osbMm}mm OSB + ${s.epsMm}mm EPS  ·  ${s.weightKg}kg/m²  ·  U=${s.uValue}`,
   }));
 
   const handleDesignChange = (id: string) => {
