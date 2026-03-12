@@ -98,6 +98,47 @@ const COLOURS_12 = [
   { index: 12, label: "Lichen",        code: "C12" },
 ];
 
+// Farrow & Ball signature colours
+const FNB_COLOURS = [
+  { index: 1,  label: "All White" },
+  { index: 2,  label: "Pointing" },
+  { index: 3,  label: "Elephant's Breath" },
+  { index: 4,  label: "Cornforth White" },
+  { index: 5,  label: "Pavilion Gray" },
+  { index: 6,  label: "Purbeck Stone" },
+  { index: 7,  label: "Strong White" },
+  { index: 8,  label: "Old White" },
+  { index: 9,  label: "Off-Black" },
+  { index: 10, label: "Pitch Black" },
+  { index: 11, label: "Hague Blue" },
+  { index: 12, label: "Calke Green" },
+];
+
+// Helper — creates one painting substrate product (Walls / Woodwork / Ceiling)
+// with three brand branches (F&B / Dulux / Osmo) each carrying 12 colour children.
+function paintSubstrate(name: string, pCode: string) {
+  const base = `DDL-3.03.${pCode}`;
+  return {
+    id: `paint-${pCode}`,
+    code: base,
+    name,
+    cribbCodes: [
+      {
+        index: 1, label: "Farrow & Ball", code: `${base}.1`,
+        children: FNB_COLOURS.map(c => ({ index: c.index, label: c.label, code: `${base}.1.${c.index}` })),
+      },
+      {
+        index: 2, label: "Dulux", code: `${base}.2`,
+        children: COLOURS_12.map(c => ({ index: c.index, label: c.label, code: `${base}.2.${c.index}` })),
+      },
+      {
+        index: 3, label: "Osmo", code: `${base}.3`,
+        children: COLOURS_12.map(c => ({ index: c.index, label: c.label, code: `${base}.3.${c.index}` })),
+      },
+    ],
+  };
+}
+
 const FITOUT_SECTIONS = [
   {
     id: "exterior", code: "E", name: "Exterior",
@@ -322,26 +363,14 @@ const FITOUT_SECTIONS = [
         ],
       },
       {
-        id: "painting", code: "F03", name: "Painting & Decorating",
+        // Substrate → Brand → Colour (3-level cascade)
+        // Products: Walls / Woodwork / Ceiling
+        // Brands:   Farrow & Ball (F&B 12-colour palette) / Dulux / Osmo (both use COLOURS_12 placeholder)
+        id: "painting", code: "F03", name: "Painting",
         products: [
-          {
-            id: "no-paint", code: "DDL-3.03.01", name: "No Finish",
-            cribbCodes: [{ index: 1, label: "Unfinished", code: "DDL-3.03.01.1" }],
-          },
-          {
-            id: "farrow-ball", code: "DDL-3.03.02", name: "Farrow & Ball",
-            cribbCodes: Array.from({ length: 12 }, (_, i) => ({
-              index: i + 1,
-              label: ["All White", "Pointing", "Elephant's Breath", "Cornforth White",
-                "Pavilion Gray", "Purbeck Stone", "Strong White", "Old White",
-                "Off-Black", "Pitch Black", "Hague Blue", "Calke Green"][i],
-              code: `DDL-3.03.02.${i + 1}`,
-            })),
-          },
-          {
-            id: "dulux", code: "DDL-3.03.03", name: "Dulux",
-            cribbCodes: COLOURS_12.map(c => ({ index: c.index, label: c.label, code: `DDL-3.03.03.${c.index}` })),
-          },
+          paintSubstrate("Walls",    "01"),
+          paintSubstrate("Woodwork", "02"),
+          paintSubstrate("Ceiling",  "03"),
         ],
       },
     ],
