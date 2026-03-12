@@ -145,15 +145,15 @@ function FitoutOptionRow({
           {selectedProduct.cribbCodes.map(cc => (
             <button
               key={cc.code}
-              title={cc.label}
+              title={cc.code}
               onClick={() => onSelect(selectedProduct.id, cc.code)}
-              className={`px-2 py-0.5 rounded text-[10px] border transition-all font-mono ${
+              className={`px-2.5 py-1 rounded text-[10px] border transition-all font-medium ${
                 selectedCribbCode === cc.code
                   ? "bg-primary/20 border-primary text-primary font-bold ring-1 ring-primary"
-                  : "bg-background border-border text-muted-foreground hover:bg-muted"
+                  : "bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
-              {cc.code}
+              {cc.label}
             </button>
           ))}
         </div>
@@ -293,7 +293,11 @@ export default function BuildingsLibraryPanel() {
                 <Collapsible
                   key={section.id}
                   open={isOpen}
-                  onOpenChange={(open) => setOpenSections(prev => ({ ...prev, [section.id]: open }))}
+                  onOpenChange={(open) => setOpenSections(prev =>
+                    open
+                      ? Object.fromEntries(Object.keys(prev).map(k => [k, k === section.id]))
+                      : { ...prev, [section.id]: false }
+                  )}
                   className="border border-border rounded-lg bg-card"
                 >
                   <CollapsibleTrigger className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-muted/50 transition-colors rounded-lg">
