@@ -1,22 +1,26 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: 3D Designer API - Garden Furniture & Garden Buildings
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: furniture
+    description: Garden Furniture design operations
+  - name: settings
+    description: Application settings
+  - name: projects
+    description: Project management
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +28,150 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get application settings
+      responses:
+        "200":
+          description: Current settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+    put:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update application settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Settings"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+
+  /furniture/styles:
+    get:
+      operationId: getFurnitureStyles
+      tags: [furniture]
+      summary: Get list of garden furniture styles
+      responses:
+        "200":
+          description: List of styles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FurnitureStyleList"
+
+  /furniture/items:
+    get:
+      operationId: getFurnitureItems
+      tags: [furniture]
+      summary: Get list of garden furniture items
+      responses:
+        "200":
+          description: List of items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FurnitureItemList"
+
+  /furniture/generate:
+    post:
+      operationId: generateFurniture3D
+      tags: [furniture]
+      summary: Generate 3D model for garden furniture
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FurnitureGenerateRequest"
+      responses:
+        "200":
+          description: Generation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateResponse"
+
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all saved projects
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectList"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectRequest"
+      responses:
+        "201":
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a project by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +182,192 @@ components:
       required:
         - status
 
+    Settings:
+      type: object
+      properties:
+        ollamaUrl:
+          type: string
+          description: Base URL for local Ollama instance
+        ollamaModel:
+          type: string
+          description: Ollama model to use (e.g. qwen2.5)
+        openWebUiUrl:
+          type: string
+          description: Base URL for Open-WebUI instance
+      required:
+        - ollamaUrl
+        - ollamaModel
+        - openWebUiUrl
+
+    FurnitureStyle:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - id
+        - name
+        - description
+
+    FurnitureStyleList:
+      type: object
+      properties:
+        styles:
+          type: array
+          items:
+            $ref: "#/components/schemas/FurnitureStyle"
+      required:
+        - styles
+
+    FurnitureItem:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+      required:
+        - id
+        - name
+        - description
+        - category
+
+    FurnitureItemList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FurnitureItem"
+      required:
+        - items
+
+    FurnitureGenerateRequest:
+      type: object
+      properties:
+        styleId:
+          type: string
+          nullable: true
+        itemId:
+          type: string
+          nullable: true
+        prompt:
+          type: string
+          description: User prompt with dimensions and design details
+        projectName:
+          type: string
+          nullable: true
+      required:
+        - prompt
+
+    GenerateResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [queued, processing, rendering, complete, error]
+        stage:
+          type: string
+          description: Current stage description
+        modelOutput:
+          type: string
+          nullable: true
+          description: The generated script/model output
+        estimatedSeconds:
+          type: integer
+          nullable: true
+        error:
+          type: string
+          nullable: true
+      required:
+        - jobId
+        - status
+        - stage
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [furniture, building]
+        styleId:
+          type: string
+          nullable: true
+        itemId:
+          type: string
+          nullable: true
+        prompt:
+          type: string
+        status:
+          type: string
+          enum: [queued, processing, rendering, complete, error]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - type
+        - prompt
+        - status
+        - createdAt
+        - updatedAt
+
+    CreateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [furniture, building]
+        styleId:
+          type: string
+          nullable: true
+        itemId:
+          type: string
+          nullable: true
+        prompt:
+          type: string
+      required:
+        - name
+        - type
+        - prompt
+
+    ProjectList:
+      type: object
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+      required:
+        - projects
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message

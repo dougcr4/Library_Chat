@@ -5,7 +5,8 @@
  * 3D Designer API - Garden Furniture & Garden Buildings
  * OpenAPI spec version: 0.1.0
  */
+import type { FurnitureStyle } from "./furnitureStyle";
 
-export interface HealthStatus {
-  status: string;
+export interface FurnitureStyleList {
+  styles: FurnitureStyle[];
 }

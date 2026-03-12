@@ -5,7 +5,8 @@
  * 3D Designer API - Garden Furniture & Garden Buildings
  * OpenAPI spec version: 0.1.0
  */
+import type { Project } from "./project";
 
-export interface HealthStatus {
-  status: string;
+export interface ProjectList {
+  projects: Project[];
 }
