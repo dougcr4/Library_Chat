@@ -1,8 +1,7 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Check, ChevronDown, AlertTriangle, Layers } from "lucide-react";
+import { ChevronDown, AlertTriangle } from "lucide-react";
 import { useDesignerContext, useBuildingsCatalogue } from "@/hooks/useDesigner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
@@ -18,10 +17,6 @@ export default function BuildingsLibraryPanel() {
   const { data: catalogue, isLoading } = useBuildingsCatalogue();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
-  const toggleSection = (sectionId: string) => {
-    setOpenSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
-  };
-
   const handleFitoutSelect = (sectionId: string, optionId: string, productId: string, cribbCode: string | null) => {
     setFitoutSelections(prev => {
       const filtered = prev.filter(p => p.optionId !== optionId);
@@ -31,85 +26,82 @@ export default function BuildingsLibraryPanel() {
 
   if (isLoading) {
     return (
-      <ScrollArea className="flex-1 px-6 py-4">
-        <div className="space-y-4">
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
-        </div>
-      </ScrollArea>
+      <div className="flex-1 px-4 py-3 space-y-3">
+        <Skeleton className="h-8 w-full rounded-lg" />
+        <Skeleton className="h-8 w-full rounded-lg" />
+        <Skeleton className="h-8 w-full rounded-lg" />
+      </div>
     );
   }
 
-  if (!catalogue) return <div className="p-6 text-sm text-muted-foreground">Failed to load catalogue.</div>;
+  if (!catalogue) return <div className="p-4 text-xs text-muted-foreground">Failed to load catalogue.</div>;
+
+  const stepLabel = (n: number, label: string) => (
+    <div className="flex items-center gap-2 mb-2">
+      <span className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">{n}</span>
+      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</span>
+    </div>
+  );
 
   return (
-    <ScrollArea className="flex-1 px-6 py-4">
-      <div className="space-y-8 pb-10">
-        
+    <ScrollArea className="flex-1 px-4 py-3">
+      <div className="space-y-5 pb-4">
+
         {/* Step 1: Shell Design */}
         <div>
-          <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs">1</span> 
-            Shell Design
-          </h3>
-          <div className="space-y-3">
+          {stepLabel(1, "Shell Design")}
+          <div className="grid grid-cols-3 gap-1.5">
             {catalogue.designs.map(design => (
-              <Card 
+              <button
                 key={design.id}
-                className={`cursor-pointer transition-all duration-200 hover:shadow-md ${selectedDesignId === design.id ? 'border-primary ring-1 ring-primary bg-primary/5' : 'hover:border-primary/50'}`}
+                title={design.description}
                 onClick={() => setSelectedDesignId(design.id === selectedDesignId ? null : design.id)}
+                className={`px-2 py-2 rounded-lg text-xs font-medium text-center transition-all border leading-tight ${
+                  selectedDesignId === design.id
+                    ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                    : 'bg-background border-border hover:border-primary/60 hover:bg-primary/5 text-foreground'
+                }`}
               >
-                <CardContent className="p-4 flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-foreground flex items-center gap-2">
-                      {design.name} <span className="text-xs font-mono text-muted-foreground">{design.code}</span>
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">{design.description}</p>
-                  </div>
-                  {selectedDesignId === design.id && <Check className="w-5 h-5 text-primary shrink-0" />}
-                </CardContent>
-              </Card>
+                <div className="font-semibold">{design.name}</div>
+                <div className={`text-[9px] mt-0.5 ${selectedDesignId === design.id ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{design.code}</div>
+              </button>
             ))}
           </div>
         </div>
 
         {/* Step 2: Size */}
         {selectedDesignId && (
-          <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs">2</span> 
-              Size
-            </h3>
-            <div className="grid grid-cols-1 gap-2">
+          <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+            {stepLabel(2, "Size")}
+            <div className="grid grid-cols-1 gap-1.5">
               {catalogue.sizes.map(size => {
-                const hasFlags = size.planningFlag || size.buildingRegsFlag;
+                const isSelected = selectedSizeId === size.id;
                 return (
-                  <Card 
+                  <button
                     key={size.id}
-                    className={`cursor-pointer transition-all duration-200 ${selectedSizeId === size.id ? 'border-primary ring-1 ring-primary bg-primary/5' : 'hover:border-primary/50'}`}
                     onClick={() => setSelectedSizeId(size.id === selectedSizeId ? null : size.id)}
+                    className={`px-3 py-2 rounded-lg text-xs font-medium text-left transition-all border flex items-center justify-between ${
+                      isSelected
+                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                        : 'bg-background border-border hover:border-primary/60 hover:bg-primary/5 text-foreground'
+                    }`}
                   >
-                    <CardContent className="p-3 flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm flex items-center gap-2">
-                          {size.label} ({size.name})
-                          {hasFlags && (
-                            <div className="flex gap-1">
-                              {size.planningFlag && <Badge variant="secondary" className="px-1 text-[10px] h-4 bg-amber-500/20 text-amber-700 border-amber-500/30" title="Planning Permission Required">P</Badge>}
-                              {size.buildingRegsFlag && <Badge variant="secondary" className="px-1 text-[10px] h-4 bg-red-500/20 text-red-700 border-red-500/30" title="Building Regulations Required">BR</Badge>}
-                            </div>
-                          )}
-                        </span>
-                        {(size.approxWidth && size.approxLength) ? (
-                          <span className="text-xs text-muted-foreground">~{size.approxWidth} × {size.approxLength}mm</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Dimensions to be determined</span>
-                        )}
-                      </div>
-                      {selectedSizeId === size.id && <Check className="w-4 h-4 text-primary shrink-0" />}
-                    </CardContent>
-                  </Card>
+                    <span className="flex items-center gap-1.5">
+                      <span className="font-semibold">{size.label}</span>
+                      <span className={`text-[10px] ${isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                        {size.name}
+                        {(size.approxWidth && size.approxLength) ? ` · ${size.approxWidth}×${size.approxLength}mm` : ''}
+                      </span>
+                    </span>
+                    <span className="flex gap-1 shrink-0">
+                      {size.planningFlag && (
+                        <span title="Planning Permission Required" className={`text-[9px] px-1 py-0.5 rounded font-bold ${isSelected ? 'bg-amber-400/40 text-amber-100' : 'bg-amber-100 text-amber-700'}`}>P</span>
+                      )}
+                      {size.buildingRegsFlag && (
+                        <span title="Building Regulations Required" className={`text-[9px] px-1 py-0.5 rounded font-bold ${isSelected ? 'bg-red-400/40 text-red-100' : 'bg-red-100 text-red-700'}`}>BR</span>
+                      )}
+                    </span>
+                  </button>
                 );
               })}
             </div>
@@ -118,81 +110,78 @@ export default function BuildingsLibraryPanel() {
 
         {/* Step 3: SIP Thickness */}
         {selectedSizeId && (
-          <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs">3</span> 
-              SIP Panel Thickness
-            </h3>
-            <div className="grid grid-cols-1 gap-2">
-              {catalogue.sipThicknesses.map(sip => (
-                <Card 
-                  key={sip.id}
-                  className={`cursor-pointer transition-all duration-200 ${selectedSipThicknessId === sip.id ? 'border-primary ring-1 ring-primary bg-primary/5' : 'hover:border-primary/50'}`}
-                  onClick={() => setSelectedSipThicknessId(sip.id === selectedSipThicknessId ? null : sip.id)}
-                >
-                  <CardContent className="p-3 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="font-medium text-sm flex items-center gap-2">
-                        {sip.label} <span className="text-xs text-muted-foreground font-normal">({sip.totalMm}mm total)</span>
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {sip.osbMm}mm OSB + {sip.epsMm}mm EPS
-                      </span>
-                    </div>
-                    {selectedSipThicknessId === sip.id && <Check className="w-4 h-4 text-primary shrink-0" />}
-                  </CardContent>
-                </Card>
-              ))}
+          <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+            {stepLabel(3, "SIP Panel Thickness")}
+            <div className="grid grid-cols-1 gap-1.5">
+              {catalogue.sipThicknesses.map(sip => {
+                const isSelected = selectedSipThicknessId === sip.id;
+                return (
+                  <button
+                    key={sip.id}
+                    onClick={() => setSelectedSipThicknessId(sip.id === selectedSipThicknessId ? null : sip.id)}
+                    className={`px-3 py-2 rounded-lg text-xs font-medium text-left transition-all border flex items-center justify-between ${
+                      isSelected
+                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                        : 'bg-background border-border hover:border-primary/60 hover:bg-primary/5 text-foreground'
+                    }`}
+                  >
+                    <span className="font-semibold">{sip.label}</span>
+                    <span className={`text-[10px] ${isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                      {sip.osbMm}mm OSB + {sip.epsMm}mm EPS
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
         {/* Step 4: Fit-out Options */}
         {selectedSipThicknessId && (
-          <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs">4</span> 
-              Fit-out Options
-            </h3>
-            <div className="space-y-3">
+          <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+            {stepLabel(4, "Fit-out Options")}
+            <div className="space-y-2">
               {catalogue.fitoutSections.map(section => {
-                const sectionSelections = fitoutSelections.filter(s => s.sectionId === section.id).length;
+                const sectionCount = fitoutSelections.filter(s => s.sectionId === section.id).length;
+                const isOpen = openSections[section.id];
                 return (
                   <Collapsible 
                     key={section.id} 
-                    open={openSections[section.id]} 
-                    onOpenChange={(isOpen) => setOpenSections(prev => ({ ...prev, [section.id]: isOpen }))}
-                    className="border border-border rounded-xl bg-card overflow-hidden shadow-sm"
+                    open={isOpen}
+                    onOpenChange={(open) => setOpenSections(prev => ({ ...prev, [section.id]: open }))}
+                    className="border border-border rounded-lg overflow-hidden bg-card"
                   >
-                    <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-semibold text-sm">{section.name}</span>
-                        {sectionSelections > 0 && (
-                          <Badge className="ml-2 h-5 bg-primary/10 text-primary hover:bg-primary/20">{sectionSelections}</Badge>
+                    <CollapsibleTrigger className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/50 transition-colors">
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs font-semibold">{section.name}</span>
+                        {sectionCount > 0 && (
+                          <span className="text-[10px] bg-primary/15 text-primary rounded-full px-1.5 py-0 font-semibold">{sectionCount}</span>
                         )}
-                      </div>
-                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${openSections[section.id] ? 'rotate-180' : ''}`} />
+                      </span>
+                      <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                     </CollapsibleTrigger>
                     
-                    <CollapsibleContent className="px-4 pb-4 pt-1 space-y-4">
+                    <CollapsibleContent className="px-3 pb-3 pt-1 space-y-3 border-t border-border">
                       {section.options.map(option => {
                         const selectedForOption = fitoutSelections.find(s => s.optionId === option.id);
                         return (
-                          <div key={option.id} className="space-y-2">
-                            <h4 className="text-xs font-medium text-foreground">{option.name}</h4>
-                            <div className="grid grid-cols-2 gap-2">
+                          <div key={option.id}>
+                            <p className="text-[10px] font-medium text-muted-foreground mb-1.5">{option.name}</p>
+                            <div className="grid grid-cols-2 gap-1">
                               {option.products.map(product => {
                                 const isProductSelected = selectedForOption?.productId === product.id;
                                 return (
-                                  <div key={product.id} className="flex flex-col gap-1">
+                                  <div key={product.id}>
                                     <button
                                       onClick={() => handleFitoutSelect(section.id, option.id, product.id, product.cribbCodes.length > 0 ? product.cribbCodes[0].code : null)}
-                                      className={`text-left p-2 rounded-lg text-xs border transition-all ${isProductSelected ? 'bg-primary border-primary text-primary-foreground' : 'bg-background hover:bg-muted border-border'}`}
+                                      className={`w-full text-left px-2 py-1.5 rounded-md text-[11px] border transition-all leading-tight ${
+                                        isProductSelected
+                                          ? 'bg-primary border-primary text-primary-foreground'
+                                          : 'bg-background hover:bg-muted border-border text-foreground'
+                                      }`}
                                     >
                                       {product.name}
                                     </button>
-                                    
                                     {isProductSelected && product.cribbCodes.length > 0 && (
                                       <div className="flex flex-wrap gap-1 mt-1 pl-1">
                                         {product.cribbCodes.map(cc => (
@@ -203,7 +192,11 @@ export default function BuildingsLibraryPanel() {
                                               e.stopPropagation();
                                               handleFitoutSelect(section.id, option.id, product.id, cc.code);
                                             }}
-                                            className={`w-6 h-6 rounded border flex items-center justify-center text-[8px] font-mono transition-all ${selectedForOption.cribbCode === cc.code ? 'ring-2 ring-primary border-primary bg-primary/10 text-primary font-bold' : 'border-border text-muted-foreground hover:bg-muted'}`}
+                                            className={`w-5 h-5 rounded border flex items-center justify-center text-[8px] font-mono transition-all ${
+                                              selectedForOption.cribbCode === cc.code
+                                                ? 'ring-2 ring-primary border-primary bg-primary/10 text-primary font-bold'
+                                                : 'border-border text-muted-foreground hover:bg-muted'
+                                            }`}
                                           >
                                             {cc.code}
                                           </button>
