@@ -10,12 +10,12 @@ export interface HealthStatus {
 }
 
 export interface Settings {
-  /** Base URL for local Ollama instance */
   ollamaUrl: string;
-  /** Ollama model to use (e.g. qwen2.5) */
   ollamaModel: string;
-  /** Base URL for Open-WebUI instance */
   openWebUiUrl: string;
+  cadqueryViewerUrl: string;
+  jupyterLabUrl: string;
+  sharedDesignsPath: string;
 }
 
 export interface FurnitureStyle {
@@ -42,8 +42,94 @@ export interface FurnitureItemList {
 export interface FurnitureGenerateRequest {
   styleId?: string | null;
   itemId?: string | null;
-  /** User prompt with dimensions and design details */
   prompt: string;
+  projectName?: string | null;
+}
+
+export interface BuildingDesign {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+}
+
+export interface BuildingSize {
+  id: string;
+  name: string;
+  label: string;
+  approxWidth?: number | null;
+  approxLength?: number | null;
+  panelCount?: number | null;
+  planningFlag: boolean;
+  buildingRegsFlag: boolean;
+}
+
+export interface SipThickness {
+  id: string;
+  totalMm: number;
+  osbMm: number;
+  epsMm: number;
+  label: string;
+}
+
+export interface TimberSize {
+  id: string;
+  species: string;
+  widthMm: number;
+  thicknessMm: number;
+  csaMm2: number;
+  label: string;
+}
+
+export interface CribbCode {
+  index: number;
+  label: string;
+  code: string;
+}
+
+export interface FitoutProduct {
+  id: string;
+  code: string;
+  name: string;
+  cribbCodes: CribbCode[];
+}
+
+export interface FitoutOption {
+  id: string;
+  code: string;
+  name: string;
+  products: FitoutProduct[];
+}
+
+export interface FitoutSection {
+  id: string;
+  code: string;
+  name: string;
+  options: FitoutOption[];
+}
+
+export interface BuildingsCatalogue {
+  designs: BuildingDesign[];
+  sizes: BuildingSize[];
+  sipThicknesses: SipThickness[];
+  timberSizes: TimberSize[];
+  standardLengths: number[];
+  fitoutSections: FitoutSection[];
+}
+
+export interface FitoutSelection {
+  sectionId: string;
+  optionId: string;
+  productId: string;
+  cribbCode?: string | null;
+}
+
+export interface BuildingGenerateRequest {
+  designId: string;
+  sizeId: string;
+  sipThicknessId: string;
+  fitoutSelections: FitoutSelection[];
+  additionalNotes?: string | null;
   projectName?: string | null;
 }
 
@@ -61,9 +147,7 @@ export const GenerateResponseStatus = {
 export interface GenerateResponse {
   jobId: string;
   status: GenerateResponseStatus;
-  /** Current stage description */
   stage: string;
-  /** The generated script/model output */
   modelOutput?: string | null;
   estimatedSeconds?: number | null;
   error?: string | null;
@@ -92,6 +176,8 @@ export interface Project {
   type: ProjectType;
   styleId?: string | null;
   itemId?: string | null;
+  designId?: string | null;
+  sizeId?: string | null;
   prompt: string;
   status: ProjectStatus;
   createdAt: string;
@@ -111,6 +197,8 @@ export interface CreateProjectRequest {
   type: CreateProjectRequestType;
   styleId?: string | null;
   itemId?: string | null;
+  designId?: string | null;
+  sizeId?: string | null;
   prompt: string;
 }
 

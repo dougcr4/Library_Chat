@@ -1,96 +1,102 @@
-# Workspace
+# 3D Designer — Garden Furniture & Garden Buildings
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+A standalone local 3D design application for garden furniture and SIP (Structural Insulated Panel) garden buildings. Connects to a local Ollama AI backend to generate CadQuery 3D model scripts, which are then rendered by a local CadQuery Server.
 
-## Stack
-
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
-
-## Structure
+## Architecture
 
 ```text
 artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
-├── lib/                    # Shared libraries
-│   ├── api-spec/           # OpenAPI spec + Orval codegen config
-│   ├── api-client-react/   # Generated React Query hooks
-│   ├── api-zod/            # Generated Zod schemas from OpenAPI
-│   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+├── artifacts/
+│   ├── api-server/        # Express 5 API (port 8080, proxied at /api)
+│   └── 3d-designer/       # React + Vite frontend (root /)
+├── lib/
+│   ├── api-spec/          # OpenAPI spec + Orval codegen
+│   ├── api-client-react/  # Generated React Query hooks
+│   ├── api-zod/           # Generated Zod validation schemas
+│   └── db/                # Drizzle ORM — PostgreSQL
+└── scripts/               # Utility scripts
 ```
 
-## TypeScript & Composite Projects
+## Stack
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+- **Monorepo**: pnpm workspaces
+- **Frontend**: React + Vite + Tailwind CSS + shadcn/ui
+- **Backend**: Express 5 + TypeScript
+- **Database**: PostgreSQL + Drizzle ORM
+- **Validation**: Zod (zod/v4)
+- **API codegen**: Orval (OpenAPI → React Query hooks + Zod schemas)
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+## Local Docker Backend (user-managed)
 
-## Root Scripts
+The app connects to these local Docker services (configured in Settings):
 
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
+| Service | Default Port | Purpose |
+|---|---|---|
+| Ollama | 11434 | AI model (qwen2.5) |
+| Open-WebUI | 3001 | Web UI for Ollama |
+| Qdrant | 6332 | Vector database |
+| JupyterLab | 8888 | 3D model viewer (token: douglas-3d) |
+| CadQuery Server | 5000 | Renders CadQuery scripts |
 
-## Packages
+Shared designs folder: `/home/douglas/DockerProjects/LLM-3D/shared_designs`
 
-### `artifacts/api-server` (`@workspace/api-server`)
+## Features
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+### Garden Furniture Mode
+- 10 design styles (Cotswold, Rustic, Contemporary, etc.)
+- 12 furniture items (Table, Chair, Bench, etc.) grouped by category
+- AI chat prompt → Ollama generates CadQuery Python script
+- Save projects with GF-prefixed job references
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+### Garden Buildings Mode (SIPs)
+- 3 shell designs: Alpha (lean-to), Beta (apex), Charlie (hip roof)
+- 5 sizes: S / M / L / XL / Bespoke — with Planning (P) and Building Regs (BR) flags
+- 5 SIP panel thicknesses: 97mm → 182mm (OSB + EPS breakdown shown)
+- 4 fit-out sections with cascading options:
+  - **Exterior**: Roof Type, Cladding, Decking, Glazing & Doors
+  - **Interior**: Insulation, Fitted Units, Electrical Installation
+  - **Finishes**: Flooring, Window Treatment, Painting
+  - **Utilities**: Guttering, Water Supply, Electrical Supply, Drainage
+- Product codes follow DDL-x.xx.xx.xx format
+- Save projects with SIP-prefixed job references
 
-### `lib/db` (`@workspace/db`)
+### Settings (gear icon, bottom-left)
+- Ollama URL + model name
+- Open-WebUI URL
+- CadQuery Viewer URL
+- JupyterLab URL
+- Shared Designs folder path
 
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
+## SIP Reference Data
 
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
+**Standard panel**: 1222mm wide × 2440mm or 3050mm long
 
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
+| Thickness | OSB each face | EPS core |
+|-----------|--------------|----------|
+| 97mm | 22mm | 75mm |
+| 122mm | 22mm | 100mm |
+| 142mm | 22mm | 120mm |
+| 162mm | 22mm | 140mm |
+| 182mm | 22mm | 160mm |
 
-### `lib/api-spec` (`@workspace/api-spec`)
+**Standard timber**: Redwood sections 25×50mm → 100×100mm
+**Standard lengths**: 3600 / 4200 / 4800 / 5100 / 5400 / 6000mm
 
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
+## Database Schema
 
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
+- `projects` — saved design jobs (furniture + building)
+- `settings` — connection settings for local Docker services
 
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
+## Running codegen
 
-### `lib/api-zod` (`@workspace/api-zod`)
+```bash
+pnpm --filter @workspace/api-spec run codegen
+```
 
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
+## DB migrations (development)
 
-### `lib/api-client-react` (`@workspace/api-client-react`)
-
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
-
-### `scripts` (`@workspace/scripts`)
-
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+```bash
+pnpm --filter @workspace/db run push
+```

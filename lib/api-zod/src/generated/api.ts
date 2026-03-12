@@ -18,24 +18,33 @@ export const HealthCheckResponse = zod.object({
  * @summary Get application settings
  */
 export const GetSettingsResponse = zod.object({
-  ollamaUrl: zod.string().describe("Base URL for local Ollama instance"),
-  ollamaModel: zod.string().describe("Ollama model to use (e.g. qwen2.5)"),
-  openWebUiUrl: zod.string().describe("Base URL for Open-WebUI instance"),
+  ollamaUrl: zod.string(),
+  ollamaModel: zod.string(),
+  openWebUiUrl: zod.string(),
+  cadqueryViewerUrl: zod.string(),
+  jupyterLabUrl: zod.string(),
+  sharedDesignsPath: zod.string(),
 });
 
 /**
  * @summary Update application settings
  */
 export const UpdateSettingsBody = zod.object({
-  ollamaUrl: zod.string().describe("Base URL for local Ollama instance"),
-  ollamaModel: zod.string().describe("Ollama model to use (e.g. qwen2.5)"),
-  openWebUiUrl: zod.string().describe("Base URL for Open-WebUI instance"),
+  ollamaUrl: zod.string(),
+  ollamaModel: zod.string(),
+  openWebUiUrl: zod.string(),
+  cadqueryViewerUrl: zod.string(),
+  jupyterLabUrl: zod.string(),
+  sharedDesignsPath: zod.string(),
 });
 
 export const UpdateSettingsResponse = zod.object({
-  ollamaUrl: zod.string().describe("Base URL for local Ollama instance"),
-  ollamaModel: zod.string().describe("Ollama model to use (e.g. qwen2.5)"),
-  openWebUiUrl: zod.string().describe("Base URL for Open-WebUI instance"),
+  ollamaUrl: zod.string(),
+  ollamaModel: zod.string(),
+  openWebUiUrl: zod.string(),
+  cadqueryViewerUrl: zod.string(),
+  jupyterLabUrl: zod.string(),
+  sharedDesignsPath: zod.string(),
 });
 
 /**
@@ -71,20 +80,117 @@ export const GetFurnitureItemsResponse = zod.object({
 export const GenerateFurniture3DBody = zod.object({
   styleId: zod.string().nullish(),
   itemId: zod.string().nullish(),
-  prompt: zod
-    .string()
-    .describe("User prompt with dimensions and design details"),
+  prompt: zod.string(),
   projectName: zod.string().nullish(),
 });
 
 export const GenerateFurniture3DResponse = zod.object({
   jobId: zod.string(),
   status: zod.enum(["queued", "processing", "rendering", "complete", "error"]),
-  stage: zod.string().describe("Current stage description"),
-  modelOutput: zod
-    .string()
-    .nullish()
-    .describe("The generated script\/model output"),
+  stage: zod.string(),
+  modelOutput: zod.string().nullish(),
+  estimatedSeconds: zod.number().nullish(),
+  error: zod.string().nullish(),
+});
+
+/**
+ * @summary Get full SIPs buildings catalogue (designs, sizes, fitout options)
+ */
+export const GetBuildingsCatalogueResponse = zod.object({
+  designs: zod.array(
+    zod.object({
+      id: zod.string(),
+      code: zod.string(),
+      name: zod.string(),
+      description: zod.string(),
+    }),
+  ),
+  sizes: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      label: zod.string(),
+      approxWidth: zod.number().nullish(),
+      approxLength: zod.number().nullish(),
+      panelCount: zod.number().nullish(),
+      planningFlag: zod.boolean(),
+      buildingRegsFlag: zod.boolean(),
+    }),
+  ),
+  sipThicknesses: zod.array(
+    zod.object({
+      id: zod.string(),
+      totalMm: zod.number(),
+      osbMm: zod.number(),
+      epsMm: zod.number(),
+      label: zod.string(),
+    }),
+  ),
+  timberSizes: zod.array(
+    zod.object({
+      id: zod.string(),
+      species: zod.string(),
+      widthMm: zod.number(),
+      thicknessMm: zod.number(),
+      csaMm2: zod.number(),
+      label: zod.string(),
+    }),
+  ),
+  standardLengths: zod.array(zod.number()),
+  fitoutSections: zod.array(
+    zod.object({
+      id: zod.string(),
+      code: zod.string(),
+      name: zod.string(),
+      options: zod.array(
+        zod.object({
+          id: zod.string(),
+          code: zod.string(),
+          name: zod.string(),
+          products: zod.array(
+            zod.object({
+              id: zod.string(),
+              code: zod.string(),
+              name: zod.string(),
+              cribbCodes: zod.array(
+                zod.object({
+                  index: zod.number(),
+                  label: zod.string(),
+                  code: zod.string(),
+                }),
+              ),
+            }),
+          ),
+        }),
+      ),
+    }),
+  ),
+});
+
+/**
+ * @summary Generate 3D model for garden building
+ */
+export const GenerateBuilding3DBody = zod.object({
+  designId: zod.string(),
+  sizeId: zod.string(),
+  sipThicknessId: zod.string(),
+  fitoutSelections: zod.array(
+    zod.object({
+      sectionId: zod.string(),
+      optionId: zod.string(),
+      productId: zod.string(),
+      cribbCode: zod.string().nullish(),
+    }),
+  ),
+  additionalNotes: zod.string().nullish(),
+  projectName: zod.string().nullish(),
+});
+
+export const GenerateBuilding3DResponse = zod.object({
+  jobId: zod.string(),
+  status: zod.enum(["queued", "processing", "rendering", "complete", "error"]),
+  stage: zod.string(),
+  modelOutput: zod.string().nullish(),
   estimatedSeconds: zod.number().nullish(),
   error: zod.string().nullish(),
 });
@@ -100,6 +206,8 @@ export const ListProjectsResponse = zod.object({
       type: zod.enum(["furniture", "building"]),
       styleId: zod.string().nullish(),
       itemId: zod.string().nullish(),
+      designId: zod.string().nullish(),
+      sizeId: zod.string().nullish(),
       prompt: zod.string(),
       status: zod.enum([
         "queued",
@@ -122,6 +230,8 @@ export const CreateProjectBody = zod.object({
   type: zod.enum(["furniture", "building"]),
   styleId: zod.string().nullish(),
   itemId: zod.string().nullish(),
+  designId: zod.string().nullish(),
+  sizeId: zod.string().nullish(),
   prompt: zod.string(),
 });
 
@@ -138,6 +248,8 @@ export const GetProjectResponse = zod.object({
   type: zod.enum(["furniture", "building"]),
   styleId: zod.string().nullish(),
   itemId: zod.string().nullish(),
+  designId: zod.string().nullish(),
+  sizeId: zod.string().nullish(),
   prompt: zod.string(),
   status: zod.enum(["queued", "processing", "rendering", "complete", "error"]),
   createdAt: zod.date(),

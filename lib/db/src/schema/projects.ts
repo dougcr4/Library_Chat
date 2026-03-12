@@ -11,6 +11,8 @@ export const projectsTable = pgTable("projects", {
   type: projectTypeEnum("type").notNull(),
   styleId: text("style_id"),
   itemId: text("item_id"),
+  designId: text("design_id"),
+  sizeId: text("size_id"),
   prompt: text("prompt").notNull(),
   status: projectStatusEnum("status").notNull().default("queued"),
   modelOutput: text("model_output"),
@@ -31,6 +33,9 @@ export const settingsTable = pgTable("settings", {
   ollamaUrl: text("ollama_url").notNull().default("http://localhost:11434"),
   ollamaModel: text("ollama_model").notNull().default("qwen2.5"),
   openWebUiUrl: text("open_web_ui_url").notNull().default("http://localhost:3001"),
+  cadqueryViewerUrl: text("cadquery_viewer_url").notNull().default("http://localhost:5000"),
+  jupyterLabUrl: text("jupyter_lab_url").notNull().default("http://localhost:8888"),
+  sharedDesignsPath: text("shared_designs_path").notNull().default("/home/douglas/DockerProjects/LLM-3D/shared_designs"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 

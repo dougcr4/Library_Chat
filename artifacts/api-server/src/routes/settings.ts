@@ -2,28 +2,34 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { settingsTable } from "@workspace/db/schema";
 import { GetSettingsResponse, UpdateSettingsBody, UpdateSettingsResponse } from "@workspace/api-zod";
+import { eq } from "drizzle-orm";
+
+const DEFAULTS = {
+  ollamaUrl: "http://localhost:11434",
+  ollamaModel: "qwen2.5",
+  openWebUiUrl: "http://localhost:3001",
+  cadqueryViewerUrl: "http://localhost:5000",
+  jupyterLabUrl: "http://localhost:8888",
+  sharedDesignsPath: "/home/douglas/DockerProjects/LLM-3D/shared_designs",
+};
 
 const router: IRouter = Router();
 
 router.get("/settings", async (_req, res) => {
   try {
-    let [settings] = await db.select().from(settingsTable).where(
-      (await import("drizzle-orm")).eq(settingsTable.id, "default")
-    );
+    let [settings] = await db.select().from(settingsTable).where(eq(settingsTable.id, "default"));
 
     if (!settings) {
-      [settings] = await db.insert(settingsTable).values({
-        id: "default",
-        ollamaUrl: "http://localhost:11434",
-        ollamaModel: "qwen2.5",
-        openWebUiUrl: "http://localhost:3001",
-      }).returning();
+      [settings] = await db.insert(settingsTable).values({ id: "default", ...DEFAULTS }).returning();
     }
 
     const data = GetSettingsResponse.parse({
       ollamaUrl: settings.ollamaUrl,
       ollamaModel: settings.ollamaModel,
       openWebUiUrl: settings.openWebUiUrl,
+      cadqueryViewerUrl: settings.cadqueryViewerUrl,
+      jupyterLabUrl: settings.jupyterLabUrl,
+      sharedDesignsPath: settings.sharedDesignsPath,
     });
     res.json(data);
   } catch (err) {
@@ -35,24 +41,12 @@ router.get("/settings", async (_req, res) => {
 router.put("/settings", async (req, res) => {
   try {
     const body = UpdateSettingsBody.parse(req.body);
-    const { eq } = await import("drizzle-orm");
 
     const [updated] = await db.insert(settingsTable)
-      .values({
-        id: "default",
-        ollamaUrl: body.ollamaUrl,
-        ollamaModel: body.ollamaModel,
-        openWebUiUrl: body.openWebUiUrl,
-        updatedAt: new Date(),
-      })
+      .values({ id: "default", ...body, updatedAt: new Date() })
       .onConflictDoUpdate({
         target: settingsTable.id,
-        set: {
-          ollamaUrl: body.ollamaUrl,
-          ollamaModel: body.ollamaModel,
-          openWebUiUrl: body.openWebUiUrl,
-          updatedAt: new Date(),
-        },
+        set: { ...body, updatedAt: new Date() },
       })
       .returning();
 
@@ -60,6 +54,9 @@ router.put("/settings", async (req, res) => {
       ollamaUrl: updated.ollamaUrl,
       ollamaModel: updated.ollamaModel,
       openWebUiUrl: updated.openWebUiUrl,
+      cadqueryViewerUrl: updated.cadqueryViewerUrl,
+      jupyterLabUrl: updated.jupyterLabUrl,
+      sharedDesignsPath: updated.sharedDesignsPath,
     });
     res.json(data);
   } catch (err) {

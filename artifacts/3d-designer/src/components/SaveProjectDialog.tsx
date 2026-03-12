@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 export default function SaveProjectDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
-  const { currentPrompt, selectedStyleId, selectedItemId } = useDesignerContext();
+  const { mode, currentPrompt, selectedStyleId, selectedItemId, selectedDesignId, selectedSizeId } = useDesignerContext();
   const saveProject = useSaveProject();
   const { toast } = useToast();
   
@@ -18,18 +18,21 @@ export default function SaveProjectDialog({ open, onOpenChange }: { open: boolea
     if (open) {
       const today = new Date();
       const dateStr = today.toISOString().slice(2,10).replace(/-/g, '');
-      setName(`GF${dateStr}-`);
+      const prefix = mode === 'furniture' ? 'GF' : 'SIP';
+      setName(`${prefix}${dateStr}-`);
     }
-  }, [open]);
+  }, [open, mode]);
 
   const handleSave = () => {
     if (!name.trim()) return;
     
     saveProject.mutate({
       name,
-      type: "furniture",
-      styleId: selectedStyleId,
-      itemId: selectedItemId,
+      type: mode,
+      styleId: mode === 'furniture' ? selectedStyleId : undefined,
+      itemId: mode === 'furniture' ? selectedItemId : undefined,
+      designId: mode === 'building' ? selectedDesignId : undefined,
+      sizeId: mode === 'building' ? selectedSizeId : undefined,
       prompt: currentPrompt || "Empty prompt"
     }, {
       onSuccess: () => {
@@ -41,6 +44,8 @@ export default function SaveProjectDialog({ open, onOpenChange }: { open: boolea
       }
     });
   };
+
+  const hint = mode === 'furniture' ? "GFYYMMDD-reference (max 20 chars)" : "SIPYYMMDD-reference (max 20 chars)";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -56,10 +61,10 @@ export default function SaveProjectDialog({ open, onOpenChange }: { open: boolea
               id="projectName" 
               value={name} 
               onChange={e => setName(e.target.value)} 
-              placeholder="GFYYMMDD-reference"
+              placeholder={hint}
               maxLength={20}
             />
-            <p className="text-xs text-muted-foreground">Format: GFYYMMDD-reference (max 20 chars)</p>
+            <p className="text-xs text-muted-foreground">Format: {hint}</p>
           </div>
         </div>
         <DialogFooter>

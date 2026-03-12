@@ -14,6 +14,8 @@ export interface Project {
   type: ProjectType;
   styleId?: string | null;
   itemId?: string | null;
+  designId?: string | null;
+  sizeId?: string | null;
   prompt: string;
   status: ProjectStatus;
   createdAt: Date;

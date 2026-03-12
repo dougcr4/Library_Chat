@@ -7,10 +7,10 @@
  */
 
 export interface Settings {
-  /** Base URL for local Ollama instance */
   ollamaUrl: string;
-  /** Ollama model to use (e.g. qwen2.5) */
   ollamaModel: string;
-  /** Base URL for Open-WebUI instance */
   openWebUiUrl: string;
+  cadqueryViewerUrl: string;
+  jupyterLabUrl: string;
+  sharedDesignsPath: string;
 }

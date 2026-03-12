@@ -5,10 +5,11 @@
  * 3D Designer API - Garden Furniture & Garden Buildings
  * OpenAPI spec version: 0.1.0
  */
+import type { CribbCode } from "./cribbCode";
 
-export interface FurnitureGenerateRequest {
-  styleId?: string | null;
-  itemId?: string | null;
-  prompt: string;
-  projectName?: string | null;
+export interface FitoutProduct {
+  id: string;
+  code: string;
+  name: string;
+  cribbCodes: CribbCode[];
 }

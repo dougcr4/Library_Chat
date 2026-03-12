@@ -12,5 +12,7 @@ export interface CreateProjectRequest {
   type: CreateProjectRequestType;
   styleId?: string | null;
   itemId?: string | null;
+  designId?: string | null;
+  sizeId?: string | null;
   prompt: string;
 }

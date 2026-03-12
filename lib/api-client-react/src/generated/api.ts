@@ -17,6 +17,8 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  BuildingGenerateRequest,
+  BuildingsCatalogue,
   CreateProjectRequest,
   ErrorResponse,
   FurnitureGenerateRequest,
@@ -507,6 +509,167 @@ export const useGenerateFurniture3D = <
   TContext
 > => {
   return useMutation(getGenerateFurniture3DMutationOptions(options));
+};
+
+/**
+ * @summary Get full SIPs buildings catalogue (designs, sizes, fitout options)
+ */
+export const getGetBuildingsCatalogueUrl = () => {
+  return `/api/buildings/catalogue`;
+};
+
+export const getBuildingsCatalogue = async (
+  options?: RequestInit,
+): Promise<BuildingsCatalogue> => {
+  return customFetch<BuildingsCatalogue>(getGetBuildingsCatalogueUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetBuildingsCatalogueQueryKey = () => {
+  return [`/api/buildings/catalogue`] as const;
+};
+
+export const getGetBuildingsCatalogueQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBuildingsCatalogue>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getBuildingsCatalogue>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetBuildingsCatalogueQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getBuildingsCatalogue>>
+  > = ({ signal }) => getBuildingsCatalogue({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBuildingsCatalogue>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetBuildingsCatalogueQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBuildingsCatalogue>>
+>;
+export type GetBuildingsCatalogueQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get full SIPs buildings catalogue (designs, sizes, fitout options)
+ */
+
+export function useGetBuildingsCatalogue<
+  TData = Awaited<ReturnType<typeof getBuildingsCatalogue>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getBuildingsCatalogue>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetBuildingsCatalogueQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Generate 3D model for garden building
+ */
+export const getGenerateBuilding3DUrl = () => {
+  return `/api/buildings/generate`;
+};
+
+export const generateBuilding3D = async (
+  buildingGenerateRequest: BuildingGenerateRequest,
+  options?: RequestInit,
+): Promise<GenerateResponse> => {
+  return customFetch<GenerateResponse>(getGenerateBuilding3DUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(buildingGenerateRequest),
+  });
+};
+
+export const getGenerateBuilding3DMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateBuilding3D>>,
+    TError,
+    { data: BodyType<BuildingGenerateRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateBuilding3D>>,
+  TError,
+  { data: BodyType<BuildingGenerateRequest> },
+  TContext
+> => {
+  const mutationKey = ["generateBuilding3D"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateBuilding3D>>,
+    { data: BodyType<BuildingGenerateRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return generateBuilding3D(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateBuilding3DMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateBuilding3D>>
+>;
+export type GenerateBuilding3DMutationBody = BodyType<BuildingGenerateRequest>;
+export type GenerateBuilding3DMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate 3D model for garden building
+ */
+export const useGenerateBuilding3D = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateBuilding3D>>,
+    TError,
+    { data: BodyType<BuildingGenerateRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateBuilding3D>>,
+  TError,
+  { data: BodyType<BuildingGenerateRequest> },
+  TContext
+> => {
+  return useMutation(getGenerateBuilding3DMutationOptions(options));
 };
 
 /**

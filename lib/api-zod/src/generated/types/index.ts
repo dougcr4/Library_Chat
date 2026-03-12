@@ -6,9 +6,18 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./buildingDesign";
+export * from "./buildingGenerateRequest";
+export * from "./buildingsCatalogue";
+export * from "./buildingSize";
 export * from "./createProjectRequest";
 export * from "./createProjectRequestType";
+export * from "./cribbCode";
 export * from "./errorResponse";
+export * from "./fitoutOption";
+export * from "./fitoutProduct";
+export * from "./fitoutSection";
+export * from "./fitoutSelection";
 export * from "./furnitureGenerateRequest";
 export * from "./furnitureItem";
 export * from "./furnitureItemList";
@@ -22,3 +31,5 @@ export * from "./projectList";
 export * from "./projectStatus";
 export * from "./projectType";
 export * from "./settings";
+export * from "./sipThickness";
+export * from "./timberSize";

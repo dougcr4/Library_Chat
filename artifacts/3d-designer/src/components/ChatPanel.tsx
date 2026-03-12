@@ -4,15 +4,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Save, Send, Bot, User, Box, Loader2, RotateCw } from "lucide-react";
-import { useDesignerContext, useStyles, useItems, useGenerateModel } from "@/hooks/useDesigner";
+import { Plus, Save, Send, Bot, User, Box, Loader2, RotateCw, AlertTriangle } from "lucide-react";
+import { useDesignerContext, useStyles, useItems, useGenerateModel, useBuildingsCatalogue, useGenerateBuilding } from "@/hooks/useDesigner";
 import SaveProjectDialog from "./SaveProjectDialog";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function ChatPanel() {
   const { 
+    mode,
     selectedStyleId, setSelectedStyleId, 
     selectedItemId, setSelectedItemId, 
+    selectedDesignId, setSelectedDesignId,
+    selectedSizeId, setSelectedSizeId,
+    selectedSipThicknessId, setSelectedSipThicknessId,
+    fitoutSelections,
     messages, setMessages,
     currentPrompt, setCurrentPrompt,
     resetDesign
@@ -20,13 +25,18 @@ export default function ChatPanel() {
 
   const { data: stylesData } = useStyles();
   const { data: itemsData } = useItems();
+  const { data: catalogueData } = useBuildingsCatalogue();
   const generateModel = useGenerateModel();
+  const generateBuilding = useGenerateBuilding();
   
   const [isSaveOpen, setIsSaveOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const selectedStyle = stylesData?.styles.find(s => s.id === selectedStyleId);
   const selectedItem = itemsData?.items.find(i => i.id === selectedItemId);
+  const selectedDesign = catalogueData?.designs.find(d => d.id === selectedDesignId);
+  const selectedSize = catalogueData?.sizes.find(s => s.id === selectedSizeId);
+  const selectedSipThickness = catalogueData?.sipThicknesses.find(s => s.id === selectedSipThicknessId);
 
   // Auto scroll
   useEffect(() => {
@@ -36,48 +46,67 @@ export default function ChatPanel() {
     }
   }, [messages]);
 
-  const handleSend = () => {
-    if (!currentPrompt.trim() || generateModel.isPending) return;
+  const isPending = generateModel.isPending || generateBuilding.isPending;
 
-    const userMessage = { role: 'user' as const, content: currentPrompt, type: 'text' as const };
+  const handleSend = () => {
+    if (isPending) return;
+    
+    // In building mode, we allow empty prompt if they just want to generate
+    if (mode === 'furniture' && !currentPrompt.trim()) return;
+    
+    const userMessageContent = currentPrompt.trim() || (mode === 'building' ? 'Generate building with selected options' : '');
+    if (!userMessageContent) return;
+
+    const userMessage = { role: 'user' as const, content: userMessageContent, type: 'text' as const };
     const loadingMessage = { role: 'system' as const, content: '', type: 'model' as const, isGenerating: true, stage: 'Initializing...' };
     
     setMessages(prev => [...prev, userMessage, loadingMessage]);
     const promptToSend = currentPrompt;
     setCurrentPrompt("");
 
-    generateModel.mutate({
-      styleId: selectedStyleId,
-      itemId: selectedItemId,
-      prompt: promptToSend
-    }, {
-      onSuccess: (data) => {
-        setMessages(prev => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1] = {
-            role: 'system',
-            content: data.modelOutput || "Model generated successfully.",
-            type: 'model',
-            isGenerating: false,
-          };
-          return newMessages;
-        });
-      },
-      onError: (err) => {
-        setMessages(prev => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1] = {
-            role: 'system',
-            content: err.message.includes('Ollama') 
-              ? "⚠️ Could not connect to local AI backend. Go to Settings to check your Ollama URL."
-              : `Error: ${err.message}`,
-            type: 'error',
-            isGenerating: false,
-          };
-          return newMessages;
-        });
-      }
-    });
+    const handleSuccess = (data: any) => {
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = {
+          role: 'system',
+          content: data.modelOutput || "Model generated successfully.",
+          type: 'model',
+          isGenerating: false,
+        };
+        return newMessages;
+      });
+    };
+
+    const handleError = (err: any) => {
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = {
+          role: 'system',
+          content: err.message.includes('Ollama') 
+            ? "⚠️ Could not connect to local AI backend. Go to Settings to check your Ollama URL."
+            : `Error: ${err.message}`,
+          type: 'error',
+          isGenerating: false,
+        };
+        return newMessages;
+      });
+    };
+
+    if (mode === 'furniture') {
+      generateModel.mutate({
+        styleId: selectedStyleId,
+        itemId: selectedItemId,
+        prompt: promptToSend
+      }, { onSuccess: handleSuccess, onError: handleError });
+    } else {
+      generateBuilding.mutate({
+        designId: selectedDesignId,
+        sizeId: selectedSizeId,
+        sipThicknessId: selectedSipThicknessId,
+        fitoutSelections,
+        additionalNotes: promptToSend
+      }, { onSuccess: handleSuccess, onError: handleError });
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -87,10 +116,14 @@ export default function ChatPanel() {
     }
   };
 
+  const hasFlags = selectedSize && (selectedSize.planningFlag || selectedSize.buildingRegsFlag);
+
   return (
     <div className="flex flex-col h-full bg-background relative">
       <header className="flex-none h-16 border-b border-border flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm z-10 shadow-sm">
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">Garden Furniture Designer</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">
+          {mode === 'furniture' ? 'Garden Furniture Designer' : 'Garden Buildings Designer'}
+        </h2>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={resetDesign} className="gap-2">
             <Plus className="w-4 h-4" />
@@ -112,7 +145,9 @@ export default function ChatPanel() {
               </div>
               <h3 className="text-3xl font-bold tracking-tight text-foreground">Welcome to 3D Designer</h3>
               <p className="text-muted-foreground text-lg leading-relaxed">
-                Select a style and/or item from the library on the left, then describe your furniture with dimensions to generate a 3D model.
+                {mode === 'furniture' 
+                  ? "Select a style and/or item from the library on the left, then describe your furniture with dimensions to generate a 3D model."
+                  : "Select a shell design, size and SIP thickness from the library, then configure your fit-out options to generate a 3D model."}
               </p>
             </div>
           ) : (
@@ -177,8 +212,9 @@ export default function ChatPanel() {
 
       <div className="p-4 bg-background/80 backdrop-blur-md border-t border-border absolute bottom-0 left-0 right-0 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
         <div className="max-w-4xl mx-auto flex flex-col gap-3">
-          {(selectedStyle || selectedItem) && (
-            <div className="flex gap-2 items-center px-1">
+          
+          {mode === 'furniture' && (selectedStyle || selectedItem) && (
+            <div className="flex gap-2 items-center px-1 flex-wrap">
               <span className="text-xs font-medium text-muted-foreground">Context:</span>
               {selectedStyle && (
                 <Badge variant="secondary" className="px-2.5 py-0.5 pr-1 gap-1.5 flex items-center bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 shadow-sm">
@@ -194,10 +230,43 @@ export default function ChatPanel() {
               )}
             </div>
           )}
+
+          {mode === 'building' && (selectedDesign || selectedSize || selectedSipThickness || hasFlags) && (
+            <div className="flex gap-2 items-center px-1 flex-wrap">
+              <span className="text-xs font-medium text-muted-foreground">Context:</span>
+              {selectedDesign && (
+                <Badge variant="secondary" className="px-2.5 py-0.5 pr-1 gap-1.5 flex items-center bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 shadow-sm">
+                  {selectedDesign.name}
+                  <button onClick={() => setSelectedDesignId(null)} className="hover:bg-primary/20 rounded-full p-0.5"><Plus className="w-3.5 h-3.5 rotate-45" /></button>
+                </Badge>
+              )}
+              {selectedSize && (
+                <Badge variant="secondary" className="px-2.5 py-0.5 pr-1 gap-1.5 flex items-center bg-accent/10 hover:bg-accent/20 text-accent-foreground border-accent/20 shadow-sm">
+                  {selectedSize.label}
+                  <button onClick={() => setSelectedSizeId(null)} className="hover:bg-accent/20 rounded-full p-0.5"><Plus className="w-3.5 h-3.5 rotate-45" /></button>
+                </Badge>
+              )}
+              {selectedSipThickness && (
+                <Badge variant="secondary" className="px-2.5 py-0.5 pr-1 gap-1.5 flex items-center bg-muted hover:bg-muted/80 text-foreground border-border shadow-sm">
+                  {selectedSipThickness.label}
+                  <button onClick={() => setSelectedSipThicknessId(null)} className="hover:bg-muted-foreground/20 rounded-full p-0.5"><Plus className="w-3.5 h-3.5 rotate-45" /></button>
+                </Badge>
+              )}
+              {hasFlags && (
+                <Badge variant="secondary" className="px-2.5 py-0.5 gap-1.5 flex items-center bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-900/50">
+                  <AlertTriangle className="w-3 h-3" />
+                  {selectedSize.buildingRegsFlag ? 'Planning & Regs Required' : 'Planning Required'}
+                </Badge>
+              )}
+            </div>
+          )}
+
           <div className="relative flex items-end gap-2 bg-card rounded-2xl border-2 border-input shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all p-2">
             <Textarea 
               className="flex-1 min-h-[64px] max-h-[200px] border-0 focus-visible:ring-0 shadow-none resize-none bg-transparent p-3 text-base leading-relaxed"
-              placeholder="Describe your furniture with dimensions (e.g. 'Round garden table, 1200mm diameter, 750mm high...')"
+              placeholder={mode === 'furniture' 
+                ? "Describe your furniture with dimensions (e.g. 'Round garden table, 1200mm diameter, 750mm high...')" 
+                : "Any additional notes or bespoke requirements? (e.g. 'include a 2m wide veranda on the south-facing side')"}
               value={currentPrompt}
               onChange={(e) => setCurrentPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -208,9 +277,9 @@ export default function ChatPanel() {
                 size="icon" 
                 className="rounded-xl w-12 h-12 shadow-sm transition-transform active:scale-95"
                 onClick={handleSend}
-                disabled={!currentPrompt.trim() || generateModel.isPending}
+                disabled={isPending || (mode === 'furniture' && !currentPrompt.trim())}
               >
-                {generateModel.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-0.5" />}
+                {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-0.5" />}
               </Button>
             </div>
           </div>

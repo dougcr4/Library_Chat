@@ -10,9 +10,7 @@ import type { GenerateResponseStatus } from "./generateResponseStatus";
 export interface GenerateResponse {
   jobId: string;
   status: GenerateResponseStatus;
-  /** Current stage description */
   stage: string;
-  /** The generated script/model output */
   modelOutput?: string | null;
   estimatedSeconds?: number | null;
   error?: string | null;

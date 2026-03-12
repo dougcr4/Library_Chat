@@ -6,9 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface FurnitureGenerateRequest {
-  styleId?: string | null;
-  itemId?: string | null;
-  prompt: string;
-  projectName?: string | null;
+export interface SipThickness {
+  id: string;
+  totalMm: number;
+  osbMm: number;
+  epsMm: number;
+  label: string;
 }

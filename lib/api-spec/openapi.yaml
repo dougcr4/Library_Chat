@@ -11,6 +11,8 @@ tags:
     description: Health operations
   - name: furniture
     description: Garden Furniture design operations
+  - name: buildings
+    description: Garden Buildings (SIPs) design operations
   - name: settings
     description: Application settings
   - name: projects
@@ -104,6 +106,38 @@ paths:
               schema:
                 $ref: "#/components/schemas/GenerateResponse"
 
+  /buildings/catalogue:
+    get:
+      operationId: getBuildingsCatalogue
+      tags: [buildings]
+      summary: Get full SIPs buildings catalogue (designs, sizes, fitout options)
+      responses:
+        "200":
+          description: Full buildings catalogue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuildingsCatalogue"
+
+  /buildings/generate:
+    post:
+      operationId: generateBuilding3D
+      tags: [buildings]
+      summary: Generate 3D model for garden building
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuildingGenerateRequest"
+      responses:
+        "200":
+          description: Generation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateResponse"
+
   /projects:
     get:
       operationId: listProjects
@@ -187,17 +221,23 @@ components:
       properties:
         ollamaUrl:
           type: string
-          description: Base URL for local Ollama instance
         ollamaModel:
           type: string
-          description: Ollama model to use (e.g. qwen2.5)
         openWebUiUrl:
           type: string
-          description: Base URL for Open-WebUI instance
+        cadqueryViewerUrl:
+          type: string
+        jupyterLabUrl:
+          type: string
+        sharedDesignsPath:
+          type: string
       required:
         - ollamaUrl
         - ollamaModel
         - openWebUiUrl
+        - cadqueryViewerUrl
+        - jupyterLabUrl
+        - sharedDesignsPath
 
     FurnitureStyle:
       type: object
@@ -261,12 +301,248 @@ components:
           nullable: true
         prompt:
           type: string
-          description: User prompt with dimensions and design details
         projectName:
           type: string
           nullable: true
       required:
         - prompt
+
+    BuildingsCatalogue:
+      type: object
+      properties:
+        designs:
+          type: array
+          items:
+            $ref: "#/components/schemas/BuildingDesign"
+        sizes:
+          type: array
+          items:
+            $ref: "#/components/schemas/BuildingSize"
+        sipThicknesses:
+          type: array
+          items:
+            $ref: "#/components/schemas/SipThickness"
+        timberSizes:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimberSize"
+        standardLengths:
+          type: array
+          items:
+            type: integer
+        fitoutSections:
+          type: array
+          items:
+            $ref: "#/components/schemas/FitoutSection"
+      required:
+        - designs
+        - sizes
+        - sipThicknesses
+        - timberSizes
+        - standardLengths
+        - fitoutSections
+
+    BuildingDesign:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - id
+        - code
+        - name
+        - description
+
+    BuildingSize:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        label:
+          type: string
+        approxWidth:
+          type: integer
+          nullable: true
+        approxLength:
+          type: integer
+          nullable: true
+        panelCount:
+          type: integer
+          nullable: true
+        planningFlag:
+          type: boolean
+        buildingRegsFlag:
+          type: boolean
+      required:
+        - id
+        - name
+        - label
+        - planningFlag
+        - buildingRegsFlag
+
+    SipThickness:
+      type: object
+      properties:
+        id:
+          type: string
+        totalMm:
+          type: integer
+        osbMm:
+          type: integer
+        epsMm:
+          type: integer
+        label:
+          type: string
+      required:
+        - id
+        - totalMm
+        - osbMm
+        - epsMm
+        - label
+
+    TimberSize:
+      type: object
+      properties:
+        id:
+          type: string
+        species:
+          type: string
+        widthMm:
+          type: integer
+        thicknessMm:
+          type: integer
+        csaMm2:
+          type: integer
+        label:
+          type: string
+      required:
+        - id
+        - species
+        - widthMm
+        - thicknessMm
+        - csaMm2
+        - label
+
+    FitoutSection:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/FitoutOption"
+      required:
+        - id
+        - code
+        - name
+        - options
+
+    FitoutOption:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/FitoutProduct"
+      required:
+        - id
+        - code
+        - name
+        - products
+
+    FitoutProduct:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        cribbCodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/CribbCode"
+      required:
+        - id
+        - code
+        - name
+        - cribbCodes
+
+    CribbCode:
+      type: object
+      properties:
+        index:
+          type: integer
+        label:
+          type: string
+        code:
+          type: string
+      required:
+        - index
+        - label
+        - code
+
+    BuildingGenerateRequest:
+      type: object
+      properties:
+        designId:
+          type: string
+        sizeId:
+          type: string
+        sipThicknessId:
+          type: string
+        fitoutSelections:
+          type: array
+          items:
+            $ref: "#/components/schemas/FitoutSelection"
+        additionalNotes:
+          type: string
+          nullable: true
+        projectName:
+          type: string
+          nullable: true
+      required:
+        - designId
+        - sizeId
+        - sipThicknessId
+        - fitoutSelections
+
+    FitoutSelection:
+      type: object
+      properties:
+        sectionId:
+          type: string
+        optionId:
+          type: string
+        productId:
+          type: string
+        cribbCode:
+          type: string
+          nullable: true
+      required:
+        - sectionId
+        - optionId
+        - productId
 
     GenerateResponse:
       type: object
@@ -278,11 +554,9 @@ components:
           enum: [queued, processing, rendering, complete, error]
         stage:
           type: string
-          description: Current stage description
         modelOutput:
           type: string
           nullable: true
-          description: The generated script/model output
         estimatedSeconds:
           type: integer
           nullable: true
@@ -308,6 +582,12 @@ components:
           type: string
           nullable: true
         itemId:
+          type: string
+          nullable: true
+        designId:
+          type: string
+          nullable: true
+        sizeId:
           type: string
           nullable: true
         prompt:
@@ -342,6 +622,12 @@ components:
           type: string
           nullable: true
         itemId:
+          type: string
+          nullable: true
+        designId:
+          type: string
+          nullable: true
+        sizeId:
           type: string
           nullable: true
         prompt:

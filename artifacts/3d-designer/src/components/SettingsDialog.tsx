@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useSettings, useUpdateSettings } from "@/hooks/useDesigner";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function SettingsDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
   const { data: settings, isLoading } = useSettings();
@@ -15,7 +16,10 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
   const [formData, setFormData] = useState({
     ollamaUrl: "http://localhost:11434",
     ollamaModel: "qwen2.5",
-    openWebUiUrl: "http://localhost:3001"
+    openWebUiUrl: "http://localhost:3001",
+    cadqueryViewerUrl: "http://localhost:5000",
+    jupyterLabUrl: "http://localhost:8888",
+    sharedDesignsPath: "/home/douglas/DockerProjects/LLM-3D/shared_designs"
   });
 
   useEffect(() => {
@@ -23,7 +27,10 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
       setFormData({
         ollamaUrl: settings.ollamaUrl || "http://localhost:11434",
         ollamaModel: settings.ollamaModel || "qwen2.5",
-        openWebUiUrl: settings.openWebUiUrl || "http://localhost:3001"
+        openWebUiUrl: settings.openWebUiUrl || "http://localhost:3001",
+        cadqueryViewerUrl: settings.cadqueryViewerUrl || "http://localhost:5000",
+        jupyterLabUrl: settings.jupyterLabUrl || "http://localhost:8888",
+        sharedDesignsPath: settings.sharedDesignsPath || "/home/douglas/DockerProjects/LLM-3D/shared_designs"
       });
     }
   }, [settings]);
@@ -42,39 +49,65 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
         {isLoading ? (
           <div className="py-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : (
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="ollamaUrl">Ollama URL</Label>
-              <Input 
-                id="ollamaUrl" 
-                value={formData.ollamaUrl} 
-                onChange={e => setFormData({...formData, ollamaUrl: e.target.value})} 
-              />
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="ollamaUrl">Ollama URL</Label>
+                <Input 
+                  id="ollamaUrl" 
+                  value={formData.ollamaUrl} 
+                  onChange={e => setFormData({...formData, ollamaUrl: e.target.value})} 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="modelName">Model Name</Label>
+                <Input 
+                  id="modelName" 
+                  value={formData.ollamaModel} 
+                  onChange={e => setFormData({...formData, ollamaModel: e.target.value})} 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="openWebUi">Open-WebUI URL</Label>
+                <Input 
+                  id="openWebUi" 
+                  value={formData.openWebUiUrl} 
+                  onChange={e => setFormData({...formData, openWebUiUrl: e.target.value})} 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="cadqueryViewerUrl">CadQuery Viewer URL</Label>
+                <Input 
+                  id="cadqueryViewerUrl" 
+                  value={formData.cadqueryViewerUrl} 
+                  onChange={e => setFormData({...formData, cadqueryViewerUrl: e.target.value})} 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="jupyterLabUrl">JupyterLab URL</Label>
+                <Input 
+                  id="jupyterLabUrl" 
+                  value={formData.jupyterLabUrl} 
+                  onChange={e => setFormData({...formData, jupyterLabUrl: e.target.value})} 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="sharedDesignsPath">Shared Designs Folder Path</Label>
+                <Input 
+                  id="sharedDesignsPath" 
+                  value={formData.sharedDesignsPath} 
+                  onChange={e => setFormData({...formData, sharedDesignsPath: e.target.value})} 
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="modelName">Model Name</Label>
-              <Input 
-                id="modelName" 
-                value={formData.ollamaModel} 
-                onChange={e => setFormData({...formData, ollamaModel: e.target.value})} 
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="openWebUi">Open-WebUI URL</Label>
-              <Input 
-                id="openWebUi" 
-                value={formData.openWebUiUrl} 
-                onChange={e => setFormData({...formData, openWebUiUrl: e.target.value})} 
-              />
-            </div>
-          </div>
+          </ScrollArea>
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
