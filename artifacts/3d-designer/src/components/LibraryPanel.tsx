@@ -2,7 +2,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, Settings as SettingsIcon, Box, Home, Check } from "lucide-react";
+import { Link } from "wouter";
+import { ChevronDown, Settings as SettingsIcon, Box, Home, Check, Database } from "lucide-react";
 import { useDesignerContext, useStyles, useItems, useProjects, useBuildingsCatalogue } from "@/hooks/useDesigner";
 import { useState, useRef, useEffect } from "react";
 import SettingsDialog from "./SettingsDialog";
@@ -248,11 +249,16 @@ export default function LibraryPanel() {
         </Collapsible>
 
         {/* Footer */}
-        <div className="px-4 py-2 flex justify-between items-center border-t border-border">
-          <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)} className="h-7 w-7 text-muted-foreground hover:text-foreground">
+        <div className="px-4 py-2 flex items-center border-t border-border gap-1">
+          <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)} className="h-7 w-7 text-muted-foreground hover:text-foreground" title="Settings">
             <SettingsIcon className="w-4 h-4" />
           </Button>
-          <span className="text-[10px] text-muted-foreground">v1.0.0</span>
+          <Link href="/admin">
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" title="Catalogue Admin">
+              <Database className="w-4 h-4" />
+            </Button>
+          </Link>
+          <span className="text-[10px] text-muted-foreground ml-auto">v1.0.0</span>
         </div>
       </div>
 

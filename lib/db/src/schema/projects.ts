@@ -36,6 +36,7 @@ export const settingsTable = pgTable("settings", {
   cadqueryViewerUrl: text("cadquery_viewer_url").notNull().default("http://localhost:5000"),
   jupyterLabUrl: text("jupyter_lab_url").notNull().default("http://localhost:8888"),
   sharedDesignsPath: text("shared_designs_path").notNull().default("/home/douglas/DockerProjects/LLM-3D/shared_designs"),
+  fitoutCatalogueJson: text("fitout_catalogue_json"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 

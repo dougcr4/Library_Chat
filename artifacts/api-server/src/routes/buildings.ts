@@ -439,16 +439,27 @@ const FITOUT_SECTIONS = [
   },
 ];
 
+// Export for use by admin route as the seeded default
+export const DEFAULT_FITOUT_SECTIONS = FITOUT_SECTIONS;
+
 // ── Routes ───────────────────────────────────────────────────────────────────
 
-router.get("/buildings/catalogue", (_req, res) => {
+router.get("/buildings/catalogue", async (_req, res) => {
+  let fitoutSections: typeof FITOUT_SECTIONS = FITOUT_SECTIONS;
+  try {
+    const row = await db.select().from(settingsTable).where(eq(settingsTable.id, "default")).then(r => r[0]);
+    if (row?.fitoutCatalogueJson) {
+      fitoutSections = JSON.parse(row.fitoutCatalogueJson);
+    }
+  } catch { /* fall back to hardcoded */ }
+
   const data = GetBuildingsCatalogueResponse.parse({
     designs: DESIGNS,
     sizes: SIZES,
     sipThicknesses: SIP_THICKNESSES,
     timberSizes: TIMBER_SIZES,
     standardLengths: STANDARD_LENGTHS,
-    fitoutSections: FITOUT_SECTIONS,
+    fitoutSections,
   });
   res.json(data);
 });

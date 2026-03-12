@@ -4,6 +4,7 @@ import settingsRouter from "./settings";
 import furnitureRouter from "./furniture";
 import buildingsRouter from "./buildings";
 import projectsRouter from "./projects";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use(settingsRouter);
 router.use(furnitureRouter);
 router.use(buildingsRouter);
 router.use(projectsRouter);
+router.use(adminRouter);
 
 export default router;
