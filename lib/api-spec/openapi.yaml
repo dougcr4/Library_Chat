@@ -374,19 +374,22 @@ components:
         approxLength:
           type: integer
           nullable: true
-        panelCount:
-          type: integer
+        footprintM2:
+          type: number
           nullable: true
         planningFlag:
           type: boolean
         buildingRegsFlag:
           type: boolean
+        note:
+          type: string
       required:
         - id
         - name
         - label
         - planningFlag
         - buildingRegsFlag
+        - note
 
     SipThickness:
       type: object

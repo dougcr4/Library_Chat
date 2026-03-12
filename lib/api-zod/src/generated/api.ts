@@ -112,9 +112,10 @@ export const GetBuildingsCatalogueResponse = zod.object({
       label: zod.string(),
       approxWidth: zod.number().nullish(),
       approxLength: zod.number().nullish(),
-      panelCount: zod.number().nullish(),
+      footprintM2: zod.number().nullish(),
       planningFlag: zod.boolean(),
       buildingRegsFlag: zod.boolean(),
+      note: zod.string(),
     }),
   ),
   sipThicknesses: zod.array(

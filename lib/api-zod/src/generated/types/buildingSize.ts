@@ -12,7 +12,8 @@ export interface BuildingSize {
   label: string;
   approxWidth?: number | null;
   approxLength?: number | null;
-  panelCount?: number | null;
+  footprintM2?: number | null;
   planningFlag: boolean;
   buildingRegsFlag: boolean;
+  note: string;
 }

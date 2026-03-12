@@ -51,26 +51,33 @@ const DESIGNS = [
   { id: "charlie", code: "DDL-S01-C", name: "Charlie", description: "Hip roof — traditional four-slope finish, premium look" },
 ];
 
+// Source: SIP_Details.pdf rows 10-28
+// Footprint < 15m² = no regs. 15–30m² = BR not required if ≥ 1m from boundary.
 const SIZES = [
   {
-    id: "small",    name: "Small",      label: "S",  approxWidth: 2440, approxLength: 3050,
-    panelCount: 8,  planningFlag: false, buildingRegsFlag: false,
+    id: "small",    name: "Small",       label: "S",   approxWidth: 4000, approxLength: 3000,
+    footprintM2: 12.00,   planningFlag: false, buildingRegsFlag: false,
+    note: "Under 15m² — no planning or building regulations apply",
   },
   {
-    id: "medium",   name: "Medium",     label: "M",  approxWidth: 3660, approxLength: 3660,
-    panelCount: 12, planningFlag: false, buildingRegsFlag: false,
+    id: "medium",   name: "Medium",      label: "M",   approxWidth: 4500, approxLength: 3500,
+    footprintM2: 15.75,   planningFlag: false, buildingRegsFlag: false,
+    note: "15–30m² — building regulations apply only if structure is within 1m of a boundary",
   },
   {
-    id: "large",    name: "Large",      label: "L",  approxWidth: 4880, approxLength: 4880,
-    panelCount: 16, planningFlag: true,  buildingRegsFlag: false,
+    id: "large",    name: "Large",       label: "L",   approxWidth: 5000, approxLength: 4000,
+    footprintM2: 20.00,   planningFlag: false, buildingRegsFlag: true,
+    note: "15–30m² — building regulations apply if structure is within 1m of a boundary",
   },
   {
-    id: "xlarge",   name: "Extra Large", label: "XL", approxWidth: 6100, approxLength: 6100,
-    panelCount: 20, planningFlag: true,  buildingRegsFlag: true,
+    id: "xlarge",   name: "Extra Large", label: "XL",  approxWidth: 5500, approxLength: 4500,
+    footprintM2: 24.75,   planningFlag: true,  buildingRegsFlag: true,
+    note: "Over 15m² — building regulations apply",
   },
   {
-    id: "bespoke",  name: "Bespoke",    label: "B",  approxWidth: null, approxLength: null,
-    panelCount: null, planningFlag: true,  buildingRegsFlag: true,
+    id: "bespoke",  name: "Bespoke",     label: "B",   approxWidth: null, approxLength: null,
+    footprintM2: null,    planningFlag: true,  buildingRegsFlag: true,
+    note: "Dimensions to be agreed — planning and building regulations advice required",
   },
 ];
 
@@ -146,29 +153,32 @@ const FITOUT_SECTIONS = [
         ],
       },
       {
-        id: "glazing", code: "E04", name: "Glazing & Doors",
+        // Glazing areas are design-determined: Design 1 = door 2m²+win 1.89m²;
+        // Design 2 adds one side window 1.89m²; Design 3 adds both side windows 1.89m² each.
+        id: "glazing-spec", code: "E04", name: "Glazing Specification",
         products: [
           {
-            id: "single-door", code: "DDL-1.04.01", name: "Single Door + Window",
+            id: "dg-shell", code: "DDL-1.04.01", name: "Shell Standard (U=1.90)",
             cribbCodes: [
-              { index: 1, label: "Standard",        code: "DDL-1.04.01.1" },
-              { index: 2, label: "French Door",     code: "DDL-1.04.01.2" },
-              { index: 3, label: "Sliding Door",    code: "DDL-1.04.01.3" },
+              { index: 1, label: "Clear + Hardcoat low-E · 8+20mm · 12mm Air gap · U=1.90", code: "DDL-1.04.01.1" },
             ],
           },
           {
-            id: "double-door", code: "DDL-1.04.02", name: "Double Doors + Windows",
+            id: "dg01", code: "DDL-1.04.02", name: "DG01 Upgraded (U=1.50)",
             cribbCodes: [
-              { index: 1, label: "Standard",        code: "DDL-1.04.02.1" },
-              { index: 2, label: "Bi-fold Doors",   code: "DDL-1.04.02.2" },
-              { index: 3, label: "Full Glazed",     code: "DDL-1.04.02.3" },
+              { index: 1, label: "Clear + Softcoat low-E · 8+22mm · 16mm Air gap · U=1.50", code: "DDL-1.04.02.1" },
             ],
           },
           {
-            id: "lantern-roof", code: "DDL-1.04.03", name: "Lantern Roof + Doors",
+            id: "dg02", code: "DDL-1.04.03", name: "DG02 Minimal BR (U=1.40)",
             cribbCodes: [
-              { index: 1, label: "Standard",        code: "DDL-1.04.03.1" },
-              { index: 2, label: "Large Lantern",   code: "DDL-1.04.03.2" },
+              { index: 1, label: "Clear + HP Softcoat low-E · 8+24mm · 18mm Air gap · U=1.40", code: "DDL-1.04.03.1" },
+            ],
+          },
+          {
+            id: "dg03", code: "DDL-1.04.04", name: "DG03 BR Compliant (U=1.10)",
+            cribbCodes: [
+              { index: 1, label: "Clear + HP Softcoat low-E · 8+28mm · 20mm Argon gap · U=1.10", code: "DDL-1.04.04.1" },
             ],
           },
         ],
@@ -179,19 +189,28 @@ const FITOUT_SECTIONS = [
     id: "interior", code: "N", name: "Interior",
     options: [
       {
+        // Source: SIP_Details.pdf rows 30-35 — component option thicknesses
+        // Spec 1: SIP shell + 12mm plasterboard  → walls 109mm / floors 109mm / roofs 109mm
+        // Spec 2: SIP + extra EPS + board         → walls 119mm / floors 119mm / roofs 119mm
+        // Spec 3: Min BR (SIP Boarded)            → walls 131mm / floors 131mm / roofs 131mm
+        // Spec 4: Full BR (SIP's BR + Boarded)    → walls 206mm / floors 181mm / roofs 181mm
         id: "insulation", code: "N01", name: "Additional Insulation",
         products: [
           {
-            id: "no-extra-insulation", code: "DDL-2.01.01", name: "SIP Standard Only",
-            cribbCodes: [{ index: 1, label: "As specified", code: "DDL-2.01.01.1" }],
+            id: "dls-1051", code: "DDL-1.05.1", name: "Board",
+            cribbCodes: [{ index: 1, label: "SIP shell + 12mm plasterboard  ·  walls/floors/roofs 109mm", code: "DDL-1.05.1" }],
           },
           {
-            id: "pir-insulation", code: "DDL-2.01.02", name: "PIR Board Upgrade",
-            cribbCodes: [
-              { index: 1, label: "25mm PIR",   code: "DDL-2.01.02.1" },
-              { index: 2, label: "50mm PIR",   code: "DDL-2.01.02.2" },
-              { index: 3, label: "75mm PIR",   code: "DDL-2.01.02.3" },
-            ],
+            id: "dls-1052", code: "DDL-1.05.2", name: "Board + Insulation",
+            cribbCodes: [{ index: 1, label: "SIP + extra EPS + board  ·  walls/floors/roofs 119mm", code: "DDL-1.05.2" }],
+          },
+          {
+            id: "dls-1053", code: "DDL-1.05.3", name: "Board + Min BR",
+            cribbCodes: [{ index: 1, label: "Min BR spec  ·  walls 131mm / floors & roofs 131mm", code: "DDL-1.05.3" }],
+          },
+          {
+            id: "dls-1054", code: "DDL-1.05.4", name: "Board + Max BR",
+            cribbCodes: [{ index: 1, label: "Full BR spec  ·  walls 206mm / floors & roofs 181mm", code: "DDL-1.05.4" }],
           },
         ],
       },

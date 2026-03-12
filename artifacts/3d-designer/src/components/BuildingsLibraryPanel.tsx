@@ -128,10 +128,14 @@ export default function BuildingsLibraryPanel() {
 
   const sizeOptions = catalogue.sizes.map(s => ({
     id: s.id,
-    label: s.label,
-    sub: `${s.name}${s.approxWidth && s.approxLength ? ` · ${s.approxWidth}×${s.approxLength}mm` : ""}`,
+    label: `${s.label} — ${s.name}`,
+    sub: [
+      s.approxWidth && s.approxLength ? `${(s.approxWidth/1000).toFixed(1)}×${(s.approxLength/1000).toFixed(1)}m` : null,
+      s.footprintM2 != null ? `${s.footprintM2}m²` : null,
+      s.note,
+    ].filter(Boolean).join("  ·  "),
     extra: (
-      <span className="flex gap-1">
+      <span className="flex gap-1 shrink-0">
         {s.planningFlag && (
           <span className="text-[9px] px-1 py-0.5 rounded font-bold bg-amber-100 text-amber-700" title="Planning Permission Required">P</span>
         )}
