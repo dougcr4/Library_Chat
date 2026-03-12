@@ -18,13 +18,8 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-const basePath = process.env.BASE_PATH;
-
-if (!basePath) {
-  throw new Error(
-    "BASE_PATH environment variable is required but was not provided.",
-  );
-}
+// BASE_PATH is required on Replit (set by the platform); locally default to "/"
+const basePath = process.env.BASE_PATH ?? "/";
 
 export default defineConfig({
   base: basePath,
@@ -62,6 +57,16 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+    // On Replit, /api routing is handled by the platform proxy.
+    // Locally, Vite forwards /api/* to the API server on port 8080.
+    proxy: process.env.REPL_ID
+      ? undefined
+      : {
+          "/api": {
+            target: `http://localhost:${process.env.API_PORT ?? "8080"}`,
+            changeOrigin: true,
+          },
+        },
     fs: {
       strict: true,
       deny: ["**/.*"],
