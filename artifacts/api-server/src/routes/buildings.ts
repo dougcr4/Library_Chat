@@ -164,30 +164,38 @@ const FITOUT_SECTIONS = [
       {
         // Glazing areas are design-determined: Design 1 = door 2m²+win 1.89m²;
         // Design 2 adds one side window 1.89m²; Design 3 adds both side windows 1.89m² each.
-        id: "glazing-spec", code: "E04", name: "Glazing Specification",
+        // E04 structure follows Excel: one option, four products — Colour / Spec / LHS / RHS.
+        id: "glazing-bars", code: "E04", name: "Glazing & Door Bars",
         products: [
           {
-            id: "dg-shell", code: "DDL-1.04.01", name: "Shell Standard (U=1.90)",
+            // 12-colour swatch for the aluminium glazing bar / door bar finish
+            id: "glazi-bar-colour", code: "DDL-1.04.01", name: "Glazing Bar Colour",
+            cribbCodes: COLOURS_12.map(c => ({ index: c.index, label: c.label, code: `DDL-1.04.01.${c.index}` })),
+          },
+          {
+            // Glazing specification — flat DG variants; DG00 = shell default
+            id: "glazing-spec", code: "DDL-1.04.02", name: "Glazing Spec",
             cribbCodes: [
-              { index: 1, label: "Clear + Hardcoat low-E · 8+20mm · 12mm Air gap · U=1.90", code: "DDL-1.04.01.1" },
+              { index: 1, label: "DG00 · Shell Standard · Clear + Hardcoat low-E · 8+20mm · Air gap 12mm · U=1.90", code: "DDL-1.04.02.1" },
+              { index: 2, label: "DG01 · Upgraded    · Clear + Softcoat low-E · 8+22mm · Air gap 16mm · U=1.50",    code: "DDL-1.04.02.2" },
+              { index: 3, label: "DG03 · Minimal BR  · Clear + HP Softcoat    · 8+24mm · Air gap 18mm · U=1.40",    code: "DDL-1.04.02.3" },
+              { index: 4, label: "DG04 · BR Compliant · Clear + HP Softcoat   · 8+28mm · Argon gap 20mm · U=1.10",  code: "DDL-1.04.02.4" },
             ],
           },
           {
-            id: "dg01", code: "DDL-1.04.02", name: "DG01 Upgraded (U=1.50)",
+            // Window orientation — left-hand side (hinge side)
+            id: "lhs-orientation", code: "DDL-1.04.03", name: "LHS Orientation",
             cribbCodes: [
-              { index: 1, label: "Clear + Softcoat low-E · 8+22mm · 16mm Air gap · U=1.50", code: "DDL-1.04.02.1" },
+              { index: 1, label: "Horizontal", code: "DDL-1.04.03.1" },
+              { index: 2, label: "Vertical",   code: "DDL-1.04.03.2" },
             ],
           },
           {
-            id: "dg02", code: "DDL-1.04.03", name: "DG02 Minimal BR (U=1.40)",
+            // Window orientation — right-hand side
+            id: "rhs-orientation", code: "DDL-1.04.04", name: "RHS Orientation",
             cribbCodes: [
-              { index: 1, label: "Clear + HP Softcoat low-E · 8+24mm · 18mm Air gap · U=1.40", code: "DDL-1.04.03.1" },
-            ],
-          },
-          {
-            id: "dg03", code: "DDL-1.04.04", name: "DG03 BR Compliant (U=1.10)",
-            cribbCodes: [
-              { index: 1, label: "Clear + HP Softcoat low-E · 8+28mm · 20mm Argon gap · U=1.10", code: "DDL-1.04.04.1" },
+              { index: 1, label: "Horizontal", code: "DDL-1.04.04.1" },
+              { index: 2, label: "Vertical",   code: "DDL-1.04.04.2" },
             ],
           },
         ],
