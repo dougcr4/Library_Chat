@@ -46,9 +46,9 @@ const TIMBER_SIZES = [
 // ── Shell designs & sizes ───────────────────────────────────────────────────
 
 const DESIGNS = [
-  { id: "alpha",   code: "DDL-S01-A", name: "Alpha",   description: "Single-pitch lean-to style — clean, compact, modern profile" },
-  { id: "beta",    code: "DDL-S01-B", name: "Beta",    description: "Apex roof — classic garden building symmetry" },
-  { id: "charlie", code: "DDL-S01-C", name: "Charlie", description: "Hip roof — traditional four-slope finish, premium look" },
+  { id: "alpha",   code: "DDL-S01-A", name: "Alpha",   description: "Compact rectangular plan · flat roof · contemporary garden room" },
+  { id: "beta",    code: "DDL-S01-B", name: "Beta",    description: "Extended rectangular plan · flat roof · generous open interior" },
+  { id: "charlie", code: "DDL-S01-C", name: "Charlie", description: "Wide plan with integrated entrance canopy · flat roof · premium garden studio" },
 ];
 
 // Source: SIP_Details.pdf rows 10-28
@@ -82,12 +82,21 @@ const SIZES = [
 ];
 
 // ── Fit-out catalogue ───────────────────────────────────────────────────────
-// Colour swatches shared across multiple products
-const COLOURS_12 = Array.from({ length: 12 }, (_, i) => ({
-  index: i + 1,
-  label: `Colour ${i + 1}`,
-  code: `C${String(i + 1).padStart(2, "0")}`,
-}));
+// Colour palette — descriptive marketing names; codes are used for back-end config only
+const COLOURS_12 = [
+  { index: 1,  label: "Slate Grey",    code: "C01" },
+  { index: 2,  label: "Forest Green",  code: "C02" },
+  { index: 3,  label: "Autumn Gold",   code: "C03" },
+  { index: 4,  label: "Birch White",   code: "C04" },
+  { index: 5,  label: "Charcoal",      code: "C05" },
+  { index: 6,  label: "Sage Mist",     code: "C06" },
+  { index: 7,  label: "Driftwood",     code: "C07" },
+  { index: 8,  label: "Pebble",        code: "C08" },
+  { index: 9,  label: "Midnight Blue", code: "C09" },
+  { index: 10, label: "Russet Brown",  code: "C10" },
+  { index: 11, label: "Cream",         code: "C11" },
+  { index: 12, label: "Lichen",        code: "C12" },
+];
 
 const FITOUT_SECTIONS = [
   {
@@ -105,7 +114,7 @@ const FITOUT_SECTIONS = [
             cribbCodes: COLOURS_12.map(c => ({ index: c.index, label: c.label, code: `DDL-1.01.02.${c.index}` })),
           },
           {
-            id: "planted", code: "DDL-1.01.03", name: "Planted (Sedum)",
+            id: "planted", code: "DDL-1.01.03", name: "Planted Roof",
             cribbCodes: [
               { index: 1, label: "Wild Flower",   code: "DDL-1.01.03.1" },
               { index: 2, label: "Spring Copse",  code: "DDL-1.01.03.2" },
