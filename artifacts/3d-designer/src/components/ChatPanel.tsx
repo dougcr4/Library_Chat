@@ -16,7 +16,6 @@ export default function ChatPanel() {
     selectedItemId, setSelectedItemId, 
     selectedDesignId, setSelectedDesignId,
     selectedSizeId, setSelectedSizeId,
-    selectedSipThicknessId, setSelectedSipThicknessId,
     fitoutSelections,
     messages, setMessages,
     currentPrompt, setCurrentPrompt,
@@ -36,7 +35,6 @@ export default function ChatPanel() {
   const selectedItem = itemsData?.items.find(i => i.id === selectedItemId);
   const selectedDesign = catalogueData?.designs.find(d => d.id === selectedDesignId);
   const selectedSize = catalogueData?.sizes.find(s => s.id === selectedSizeId);
-  const selectedSipThickness = catalogueData?.sipThicknesses.find(s => s.id === selectedSipThicknessId);
 
   // Auto scroll
   useEffect(() => {
@@ -102,7 +100,6 @@ export default function ChatPanel() {
       generateBuilding.mutate({
         designId: selectedDesignId,
         sizeId: selectedSizeId,
-        sipThicknessId: selectedSipThicknessId,
         fitoutSelections,
         additionalNotes: promptToSend
       }, { onSuccess: handleSuccess, onError: handleError });
@@ -231,7 +228,7 @@ export default function ChatPanel() {
             </div>
           )}
 
-          {mode === 'building' && (selectedDesign || selectedSize || selectedSipThickness || hasFlags) && (
+          {mode === 'building' && (selectedDesign || selectedSize || hasFlags) && (
             <div className="flex gap-2 items-center px-1 flex-wrap">
               <span className="text-xs font-medium text-muted-foreground">Context:</span>
               {selectedDesign && (
@@ -244,12 +241,6 @@ export default function ChatPanel() {
                 <Badge variant="secondary" className="px-2.5 py-0.5 pr-1 gap-1.5 flex items-center bg-accent/10 hover:bg-accent/20 text-accent-foreground border-accent/20 shadow-sm">
                   {selectedSize.label}
                   <button onClick={() => setSelectedSizeId(null)} className="hover:bg-accent/20 rounded-full p-0.5"><Plus className="w-3.5 h-3.5 rotate-45" /></button>
-                </Badge>
-              )}
-              {selectedSipThickness && (
-                <Badge variant="secondary" className="px-2.5 py-0.5 pr-1 gap-1.5 flex items-center bg-muted hover:bg-muted/80 text-foreground border-border shadow-sm">
-                  {selectedSipThickness.label}
-                  <button onClick={() => setSelectedSipThicknessId(null)} className="hover:bg-muted-foreground/20 rounded-full p-0.5"><Plus className="w-3.5 h-3.5 rotate-45" /></button>
                 </Badge>
               )}
               {hasFlags && (

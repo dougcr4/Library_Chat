@@ -94,7 +94,7 @@ export default function LibraryPanel() {
     mode, setMode,
     selectedStyleId, setSelectedStyleId,
     selectedItemId, setSelectedItemId,
-    selectedDesignId, selectedSizeId, selectedSipThicknessId,
+    selectedDesignId, selectedSizeId,
     setCurrentPrompt,
   } = useDesignerContext();
 
@@ -110,7 +110,6 @@ export default function LibraryPanel() {
   const selectedItem = itemsData?.items.find(i => i.id === selectedItemId);
   const selectedDesign = catalogueData?.designs.find(d => d.id === selectedDesignId);
   const selectedSize = catalogueData?.sizes.find(s => s.id === selectedSizeId);
-  const selectedSipThickness = catalogueData?.sipThicknesses.find(s => s.id === selectedSipThicknessId);
 
   const styleOptions = stylesData?.styles.map(s => ({ id: s.id, label: s.name, sub: s.description })) ?? [];
   const itemOptions = itemsData?.items.map(i => ({ id: i.id, label: i.name, sub: i.category })) ?? [];
@@ -200,11 +199,10 @@ export default function LibraryPanel() {
               <p className="text-xs italic text-muted-foreground">Nothing selected</p>
             )
           ) : (
-            selectedDesign || selectedSize || selectedSipThickness ? (
+            selectedDesign || selectedSize ? (
               <div className="flex flex-wrap gap-1">
                 {selectedDesign && <Badge variant="default" className="text-[10px] h-5 px-1.5 bg-primary hover:bg-primary">{selectedDesign.name}</Badge>}
                 {selectedSize && <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-primary text-primary">{selectedSize.label}</Badge>}
-                {selectedSipThickness && <Badge variant="secondary" className="text-[10px] h-5 px-1.5">{selectedSipThickness.label}</Badge>}
               </div>
             ) : (
               <p className="text-xs italic text-muted-foreground">Nothing selected</p>

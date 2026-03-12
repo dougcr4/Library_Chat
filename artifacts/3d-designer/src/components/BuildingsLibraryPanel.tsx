@@ -168,7 +168,6 @@ export default function BuildingsLibraryPanel() {
   const {
     selectedDesignId, setSelectedDesignId,
     selectedSizeId, setSelectedSizeId,
-    selectedSipThicknessId, setSelectedSipThicknessId,
     fitoutSelections, setFitoutSelections,
   } = useDesignerContext();
 
@@ -176,7 +175,7 @@ export default function BuildingsLibraryPanel() {
 
   // Pre-initialise all sections as closed (avoids controlled/uncontrolled warning)
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries((["exterior", "interior", "finishes", "utilities"]).map(id => [id, false]))
+    Object.fromEntries(["exterior", "interior", "finishes", "utilities"].map(id => [id, false]))
   );
 
   const handleFitoutSelect = useCallback((sectionId: string, optionId: string, productId: string, cribbCode: string | null) => {
@@ -204,7 +203,6 @@ export default function BuildingsLibraryPanel() {
 
   const selectedDesign = catalogue.designs.find(d => d.id === selectedDesignId);
   const selectedSize = catalogue.sizes.find(s => s.id === selectedSizeId);
-  const selectedSip = catalogue.sipThicknesses.find(s => s.id === selectedSipThicknessId);
 
   const designOptions = catalogue.designs.map(d => ({
     id: d.id,
@@ -228,27 +226,14 @@ export default function BuildingsLibraryPanel() {
     ),
   }));
 
-  const sipOptions = catalogue.sipThicknesses.map(s => ({
-    id: s.id,
-    label: s.label,
-    sub: `${s.osbMm}mm OSB + ${s.epsMm}mm EPS  ·  ${s.weightKg}kg/m²  ·  U=${s.uValue}`,
-  }));
-
   const handleDesignChange = (id: string) => {
     setSelectedDesignId(id);
     setSelectedSizeId(null);
-    setSelectedSipThicknessId(null);
     setFitoutSelections([]);
   };
 
   const handleSizeChange = (id: string) => {
     setSelectedSizeId(id);
-    setSelectedSipThicknessId(null);
-    setFitoutSelections([]);
-  };
-
-  const handleSipChange = (id: string) => {
-    setSelectedSipThicknessId(id);
     setFitoutSelections([]);
   };
 
@@ -263,7 +248,7 @@ export default function BuildingsLibraryPanel() {
           placeholder="Select a shell design…"
           options={designOptions}
           onSelect={handleDesignChange}
-          onClear={() => { setSelectedDesignId(null); setSelectedSizeId(null); setSelectedSipThicknessId(null); setFitoutSelections([]); }}
+          onClear={() => { setSelectedDesignId(null); setSelectedSizeId(null); setFitoutSelections([]); }}
         />
 
         {/* Step 2: Size */}
@@ -274,44 +259,31 @@ export default function BuildingsLibraryPanel() {
             placeholder="Select a size…"
             options={sizeOptions}
             onSelect={handleSizeChange}
-            onClear={() => { setSelectedSizeId(null); setSelectedSipThicknessId(null); setFitoutSelections([]); }}
+            onClear={() => { setSelectedSizeId(null); setFitoutSelections([]); }}
             disabled={!selectedDesignId}
           />
         </div>
 
-        {/* Step 3: SIP Thickness */}
-        <div className={selectedSizeId ? "animate-in fade-in slide-in-from-top-2 duration-200" : ""}>
-          <DropdownSelector
-            label="3. SIP Panel Thickness"
-            value={selectedSipThicknessId}
-            placeholder="Select panel thickness…"
-            options={sipOptions}
-            onSelect={handleSipChange}
-            onClear={() => { setSelectedSipThicknessId(null); setFitoutSelections([]); }}
-            disabled={!selectedSizeId}
-          />
-        </div>
-
-        {/* Design summary headline — appears once all 3 structural selections are made */}
-        {selectedDesign && selectedSize && selectedSip && (
+        {/* Design summary headline — appears once shell + size are chosen */}
+        {selectedDesign && selectedSize && (
           <div className="animate-in fade-in duration-300 rounded-lg bg-primary/8 border border-primary/20 px-3 py-2">
             <p className="text-[10px] font-semibold text-primary/70 uppercase tracking-wider mb-0.5">Selected Design</p>
             <p className="text-sm font-bold text-primary leading-tight">
               {selectedDesign.name} · {selectedSize.label} — {selectedSize.name}
             </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              {selectedSize.approxWidth && selectedSize.approxLength
-                ? `${(selectedSize.approxWidth / 1000).toFixed(1)}×${(selectedSize.approxLength / 1000).toFixed(1)}m  ·  `
-                : ""}
-              {selectedSip.label}
-            </p>
+            {selectedSize.approxWidth && selectedSize.approxLength && (
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {(selectedSize.approxWidth / 1000).toFixed(1)}×{(selectedSize.approxLength / 1000).toFixed(1)}m
+                {selectedSize.footprintM2 != null ? `  ·  ${selectedSize.footprintM2}m²` : ""}
+              </p>
+            )}
           </div>
         )}
 
-        {/* Step 4: Fit-out sections — inline buttons, no floating dropdowns */}
-        {selectedSipThicknessId && (
+        {/* Step 3: Fit-out sections — inline buttons, no floating dropdowns */}
+        {selectedSizeId && (
           <div className="animate-in fade-in slide-in-from-top-2 duration-200 space-y-2">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">4. Fit-out Options</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">3. Fit-out Options</p>
 
             {catalogue.fitoutSections.map(section => {
               const sectionCount = fitoutSelections.filter(s => s.sectionId === section.id).length;
