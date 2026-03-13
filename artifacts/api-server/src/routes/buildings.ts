@@ -558,7 +558,7 @@ Include all imports. Output ONLY the Python script, no explanations.`;
     let errorMsg: string | null = null;
 
     try {
-      const ollamaResponse = await fetch(`${settings.ollamaUrl}/api/generate`, {
+      const ollamaResponse = await fetch(`${settings.ollamaUrl.trim()}/api/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

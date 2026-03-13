@@ -1,0 +1,130 @@
+Server listening on port 8080
+Ollama error: TypeError: Failed to parse URL from http://localhost:11434 /api/generate
+    at node:internal/deps/undici/undici:14902:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/douglas/Desktop/3D-Design/Library-Chat/artifacts/api-server/src/routes/furniture.ts:93:30) {
+  [cause]: TypeError: Invalid URL
+      at new URL (node:internal/url:806:29)
+      at new Request (node:internal/deps/undici/undici:9776:25)
+      at fetch (node:internal/deps/undici/undici:10505:25)
+      at fetch (node:internal/deps/undici/undici:14900:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at <anonymous> (/home/douglas/Desktop/3D-Design/Library-Chat/artifacts/api-server/src/routes/furniture.ts:93:36)
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+    code: 'ERR_INVALID_URL',
+    input: 'http://localhost:11434 /api/generate'
+  }
+}
+Error updating settings: ZodError: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "openWebUiUrl"
+    ],
+    "message": "Required"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "cadqueryViewerUrl"
+    ],
+    "message": "Required"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "jupyterLabUrl"
+    ],
+    "message": "Required"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "sharedDesignsPath"
+    ],
+    "message": "Required"
+  }
+]
+    at get error [as error] (file:///home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/types.js:39:31)
+    at ZodObject.parse (file:///home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/types.js:114:22)
+    at <anonymous> (/home/douglas/Desktop/3D-Design/Library-Chat/artifacts/api-server/src/routes/settings.ts:43:37)
+    at Layer.handleRequest (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at /home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:295:15
+    at processParams (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12) {
+  issues: [
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    },
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    },
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    },
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    }
+  ],
+  addIssue: [Function (anonymous)],
+  addIssues: [Function (anonymous)],
+  errors: [
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    },
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    },
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    },
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    }
+  ]
+}
+
+
