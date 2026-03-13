@@ -4,10 +4,42 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Save, Send, Bot, User, Box, Loader2, RotateCw, AlertTriangle } from "lucide-react";
+import { Plus, Save, Send, Bot, User, Box, Loader2, RotateCw, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
 import { useDesignerContext, useStyles, useItems, useGenerateModel, useBuildingsCatalogue, useGenerateBuilding, useSettings } from "@/hooks/useDesigner";
 import SaveProjectDialog from "./SaveProjectDialog";
 import { Card, CardContent } from "@/components/ui/card";
+
+const PIPELINE_STAGES = [
+  { key: 'ai',     label: 'Calling AI model',          detail: 'Sending prompt to Ollama…'              },
+  { key: 'script', label: 'Generating CadQuery script', detail: 'AI writing Python (30–90 s)…'           },
+  { key: 'write',  label: 'Writing design file',        detail: 'Saving .py to shared designs folder…'   },
+  { key: 'viewer', label: 'Loading 3D viewer',          detail: 'CadQuery server rendering model…'       },
+];
+
+function PipelineProgress({ stageIndex }: { stageIndex: number }) {
+  return (
+    <div className="w-full space-y-2 py-1">
+      {PIPELINE_STAGES.map((s, i) => {
+        const done    = i < stageIndex;
+        const active  = i === stageIndex;
+        const pending = i > stageIndex;
+        return (
+          <div key={s.key} className={`flex items-start gap-3 text-sm transition-opacity duration-300 ${pending ? 'opacity-30' : 'opacity-100'}`}>
+            <span className="mt-0.5 shrink-0">
+              {done   && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+              {active && <Loader2 className="w-4 h-4 text-primary animate-spin" />}
+              {pending && <Circle className="w-4 h-4 text-muted-foreground" />}
+            </span>
+            <div>
+              <p className={`font-medium leading-tight ${active ? 'text-foreground' : done ? 'text-muted-foreground line-through' : 'text-muted-foreground'}`}>{s.label}</p>
+              {active && <p className="text-xs text-muted-foreground mt-0.5">{s.detail}</p>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function ChatPanel() {
   const { 
@@ -29,6 +61,20 @@ export default function ChatPanel() {
   const generateModel = useGenerateModel();
   const generateBuilding = useGenerateBuilding();
   const cadqueryViewerUrl = settingsData?.cadqueryViewerUrl || "http://localhost:5000";
+  const [pipelineStage, setPipelineStage] = useState(0);
+  const stageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isPending = generateModel.isPending || generateBuilding.isPending;
+
+  useEffect(() => {
+    if (isPending) {
+      setPipelineStage(0);
+      stageTimerRef.current = setTimeout(() => setPipelineStage(1), 4000);
+    } else {
+      if (stageTimerRef.current) clearTimeout(stageTimerRef.current);
+    }
+    return () => { if (stageTimerRef.current) clearTimeout(stageTimerRef.current); };
+  }, [isPending]);
   
   const [isSaveOpen, setIsSaveOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -45,8 +91,6 @@ export default function ChatPanel() {
       scrollContainer.scrollTop = scrollContainer.scrollHeight;
     }
   }, [messages]);
-
-  const isPending = generateModel.isPending || generateBuilding.isPending;
 
   const handleSend = () => {
     if (isPending) return;
@@ -65,16 +109,22 @@ export default function ChatPanel() {
     setCurrentPrompt("");
 
     const handleSuccess = (data: any) => {
-      setMessages(prev => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = {
-          role: 'system',
-          content: data.modelOutput || "Model generated successfully.",
-          type: 'model',
-          isGenerating: false,
-        };
-        return newMessages;
-      });
+      setPipelineStage(2);
+      setTimeout(() => {
+        setPipelineStage(3);
+        setTimeout(() => {
+          setMessages(prev => {
+            const newMessages = [...prev];
+            newMessages[newMessages.length - 1] = {
+              role: 'system',
+              content: data.modelOutput || "Model generated successfully.",
+              type: 'model',
+              isGenerating: false,
+            };
+            return newMessages;
+          });
+        }, 1500);
+      }, 1000);
     };
 
     const handleError = (err: any) => {
@@ -174,15 +224,10 @@ export default function ChatPanel() {
                   )}
 
                   {msg.role === 'system' && msg.type === 'model' && msg.isGenerating && (
-                    <Card className="w-80 shadow-md border-primary/20 bg-primary/5 animate-pulse">
-                      <CardContent className="p-4 flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                          <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-sm text-foreground">Generating Model</p>
-                          <p className="text-xs text-muted-foreground">{msg.stage}</p>
-                        </div>
+                    <Card className="w-80 shadow-md border-primary/20 bg-primary/5">
+                      <CardContent className="p-4">
+                        <p className="font-semibold text-sm text-foreground mb-3">Generating 3D Design</p>
+                        <PipelineProgress stageIndex={pipelineStage} />
                       </CardContent>
                     </Card>
                   )}
