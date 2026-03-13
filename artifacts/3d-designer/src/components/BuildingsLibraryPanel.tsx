@@ -3,7 +3,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown, Check } from "lucide-react";
 import { useDesignerContext, useBuildingsCatalogue } from "@/hooks/useDesigner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 // ── CribbNode type & helpers (recursive cascade) ────────────────────────────
 
@@ -50,23 +51,32 @@ function DropdownSelector({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const selected = options.find(o => o.id === value);
+
+  const openDropdown = useCallback(() => {
+    if (disabled) return;
+    if (btnRef.current) setRect(btnRef.current.getBoundingClientRect());
+    setOpen(true);
+  }, [disabled]);
 
   useEffect(() => {
+    if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (btnRef.current && !btnRef.current.contains(target)) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const selected = options.find(o => o.id === value);
+  }, [open]);
 
   return (
-    <div ref={ref} className={`relative transition-opacity ${disabled ? "opacity-40 pointer-events-none" : ""}`}>
+    <div className={`transition-opacity ${disabled ? "opacity-40 pointer-events-none" : ""}`}>
       <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
       <button
-        onClick={() => !disabled && setOpen(o => !o)}
+        ref={btnRef}
+        onClick={openDropdown}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
           selected
             ? "bg-primary text-primary-foreground border-primary"
@@ -77,8 +87,12 @@ function DropdownSelector({
         <ChevronDown className={`w-3.5 h-3.5 ml-2 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
-      {open && !disabled && (
-        <div className="absolute z-[100] top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-xl overflow-hidden">
+      {open && rect && createPortal(
+        <div
+          style={{ position: "fixed", top: rect.bottom + 4, left: rect.left, width: rect.width, zIndex: 9999 }}
+          className="bg-popover border border-border rounded-lg shadow-xl overflow-hidden"
+          onMouseDown={e => e.stopPropagation()}
+        >
           {value && (
             <button
               onClick={() => { onClear(); setOpen(false); }}
@@ -107,7 +121,8 @@ function DropdownSelector({
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

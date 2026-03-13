@@ -5,7 +5,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Link } from "wouter";
 import { ChevronDown, Settings as SettingsIcon, Box, Home, Check, Database } from "lucide-react";
 import { useDesignerContext, useStyles, useItems, useProjects, useBuildingsCatalogue } from "@/hooks/useDesigner";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import SettingsDialog from "./SettingsDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import BuildingsLibraryPanel from "./BuildingsLibraryPanel";
@@ -28,23 +29,31 @@ function DropdownSelector({
   renderOption?: (opt: { id: string; label: string; sub?: string }) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const selected = options.find(o => o.id === value);
+
+  const openDropdown = useCallback(() => {
+    if (btnRef.current) setRect(btnRef.current.getBoundingClientRect());
+    setOpen(true);
+  }, []);
 
   useEffect(() => {
+    if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (btnRef.current && !btnRef.current.contains(target)) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const selected = options.find(o => o.id === value);
+  }, [open]);
 
   return (
-    <div ref={ref} className="relative">
+    <div>
       <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
       <button
-        onClick={() => setOpen(o => !o)}
+        ref={btnRef}
+        onClick={openDropdown}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
           selected
             ? "bg-primary text-primary-foreground border-primary"
@@ -55,8 +64,12 @@ function DropdownSelector({
         <ChevronDown className={`w-3.5 h-3.5 ml-2 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
-      {open && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
+      {open && rect && createPortal(
+        <div
+          style={{ position: "fixed", top: rect.bottom + 4, left: rect.left, width: rect.width, zIndex: 9999 }}
+          className="bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
+          onMouseDown={e => e.stopPropagation()}
+        >
           {value && (
             <button
               onClick={() => { onClear(); setOpen(false); }}
@@ -84,7 +97,8 @@ function DropdownSelector({
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
