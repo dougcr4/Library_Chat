@@ -1,0 +1,32 @@
+sudo -u postgres psql -d designer -c "UPDATE settings SET ollama_model = 'qwen2.5:14b' WHERE id = 'default';"             sudo -u postgres psql -d designer -c "UPDATE settings SET ollama_model = 'qwen2.5:14b' WHERE id = 'default';"
+[sudo] password for douglas: 
+ERROR:  relation "settings" does not exist
+LINE 1: UPDATE settings SET ollama_model = 'qwen2.5:14b' WHERE id = ...
+               ^
+douglas@Office:~/Desktop/3D-Design/Library-Chat$ sudo -u postgres psql -d designer -c "INSERT INTO settings (id, ollama_url, ollama_model, open_web_ui_url, cadquery_viewer_url, jupyter_lab_url, shared_designs_path) VALUES ('default', 'http://localhost:11434', 'qwen2.5:14b', 'http://localhost:3001', 'http://localhost:5000', 'http://localhost:8888', '/home/douglas/DockerProjects/LLM-3D/shared_designs') ON CONFLICT (id) DO UPDATE SET ollama_model = 'qwen2.5:14b';"
+ERROR:  relation "settings" does not exist
+LINE 1: INSERT INTO settings (id, ollama_url, ollama_model, open_web...
+                    ^
+douglas@Office:~/Desktop/3D-Design/Library-Chat$ export DATABASE_URL=postgresql://postgres@localhost:5432/designer
+pnpm --filter @workspace/db run push
+
+> @workspace/db@0.0.0 push /home/douglas/Desktop/3D-Design/Library-Chat/lib/db
+> drizzle-kit push --config ./drizzle.config.ts
+
+Reading config file '/home/douglas/Desktop/3D-Design/Library-Chat/lib/db/drizzle.config.ts'
+Using 'pg' driver for database querying
+[⣷] Pulling schema from database...
+Error: SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string
+    at /home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.query (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/drizzle-kit@0.31.9/node_modules/drizzle-kit/bin.cjs:80623:26)
+    at async fromDatabase2 (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/drizzle-kit@0.31.9/node_modules/drizzle-kit/bin.cjs:19276:25)
+douglas@Office:~/Desktop/3D-Design/Library-Chat$ sudo -u postgres psql -d designer -c "UPDATE settings SET ollama_model = 'qwen2.5:14b' WHERE id = 'default';"
+ERROR:  relation "settings" does not exist
+LINE 1: UPDATE settings SET ollama_model = 'qwen2.5:14b' WHERE id = ...
+               ^
+douglas@Office:~/Desktop/3D-Design/Library-Chat$ export DATABASE_URL=postgresql://postgres@localhost:5432/designer
+pnpm --filter @workspace/db run push
+
+> @workspace/db@0.0.0 push /home/douglas/Desktop/3D-Design/Library-Chat/lib/db
+> drizzle-kit push --config ./drizzle.config.ts
