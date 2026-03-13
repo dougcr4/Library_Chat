@@ -3,16 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Save, Send, Bot, User, Box, Loader2, RotateCw, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
+import { Plus, Save, Send, Bot, User, ExternalLink, Loader2, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
 import { useDesignerContext, useStyles, useItems, useGenerateModel, useBuildingsCatalogue, useGenerateBuilding, useSettings } from "@/hooks/useDesigner";
 import SaveProjectDialog from "./SaveProjectDialog";
 import { Card, CardContent } from "@/components/ui/card";
 
 const PIPELINE_STAGES = [
-  { key: 'ai',     label: 'Calling AI model',          detail: 'Sending prompt to Ollama…'              },
-  { key: 'script', label: 'Generating CadQuery script', detail: 'AI writing Python (30–90 s)…'           },
-  { key: 'write',  label: 'Writing design file',        detail: 'Saving .py to shared designs folder…'   },
-  { key: 'viewer', label: 'Loading 3D viewer',          detail: 'CadQuery server rendering model…'       },
+  { key: 'ai',     label: 'Calling AI model',          detail: 'Sending prompt to Ollama…'                          },
+  { key: 'script', label: 'Generating CadQuery script', detail: 'AI writing Python (30–90 s)…'                       },
+  { key: 'write',  label: 'Writing design file',        detail: 'Saving latest_design.py to shared designs folder…' },
+  { key: 'ready',  label: 'Ready in JupyterLab',        detail: 'Open JupyterLab to view and run the 3D model…'     },
 ];
 
 function PipelineProgress({ stageIndex }: { stageIndex: number }) {
@@ -59,9 +59,9 @@ export default function ChatPanel() {
   const { data: settingsData } = useSettings();
   const generateModel = useGenerateModel();
   const generateBuilding = useGenerateBuilding();
-  const cadqueryBaseUrl = settingsData?.cadqueryViewerUrl || "http://localhost:5000";
+  const jupyterLabUrl = (settingsData?.jupyterLabUrl || "http://localhost:8888").replace(/\/$/, "");
   const [pipelineStage, setPipelineStage] = useState(0);
-  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [scriptReady, setScriptReady] = useState(false);
   const stageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isPending = generateModel.isPending || generateBuilding.isPending;
@@ -103,7 +103,8 @@ export default function ChatPanel() {
 
     const userMessage = { role: 'user' as const, content: userMessageContent, type: 'text' as const };
     const loadingMessage = { role: 'system' as const, content: '', type: 'model' as const, isGenerating: true, stage: 'Initializing...' };
-    
+
+    setScriptReady(false);
     setMessages(prev => [...prev, userMessage, loadingMessage]);
     const promptToSend = currentPrompt;
     setCurrentPrompt("");
@@ -112,10 +113,7 @@ export default function ChatPanel() {
       setPipelineStage(2);
       setTimeout(() => {
         setPipelineStage(3);
-        // Build the viewer URL pointing to the latest_design module, with a
-        // cache-busting timestamp so the iframe reloads every time.
-        const url = `${cadqueryBaseUrl}?module=latest_design&t=${Date.now()}`;
-        setViewerUrl(url);
+        setScriptReady(true);
         setTimeout(() => {
           setMessages(prev => {
             const newMessages = [...prev];
@@ -127,7 +125,7 @@ export default function ChatPanel() {
             };
             return newMessages;
           });
-        }, 1500);
+        }, 800);
       }, 1000);
     };
 
@@ -205,7 +203,7 @@ export default function ChatPanel() {
             </div>
           ) : (
             messages.map((msg, idx) => (
-              <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+              <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`} data-last={idx === messages.length - 1}>
                 <Avatar className={`w-8 h-8 border shadow-sm ${msg.role === 'user' ? 'bg-primary border-primary' : 'bg-card border-border'}`}>
                   {msg.role === 'user' ? (
                     <User className="w-4 h-4 text-primary-foreground m-auto" />
@@ -243,25 +241,25 @@ export default function ChatPanel() {
                           <pre className="text-muted-foreground">{msg.content}</pre>
                         </div>
                       )}
-                      {viewerUrl && (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between px-1">
-                            <span className="text-xs font-medium text-muted-foreground">3D Viewer — CadQuery Server</span>
+                      {scriptReady && idx === messages.length - 1 && (
+                        <Card className="border-green-200 bg-green-50 dark:border-green-900/40 dark:bg-green-950/20 shadow-sm">
+                          <CardContent className="p-4 flex items-center justify-between gap-4">
+                            <div>
+                              <p className="font-semibold text-sm text-green-800 dark:text-green-300">Script ready in JupyterLab</p>
+                              <p className="text-xs text-green-700/80 dark:text-green-400/80 mt-0.5">
+                                Open <span className="font-mono">latest_design.py</span> and run the cell to render your 3D model.
+                              </p>
+                            </div>
                             <Button
-                              variant="ghost" size="sm"
-                              className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-                              onClick={() => setViewerUrl(`${cadqueryBaseUrl}?module=latest_design&t=${Date.now()}`)}
+                              size="sm"
+                              className="shrink-0 gap-2 bg-green-700 hover:bg-green-800 text-white dark:bg-green-700 dark:hover:bg-green-600"
+                              onClick={() => window.open(`${jupyterLabUrl}/lab/tree/latest_design.py`, "_blank")}
                             >
-                              <RotateCw className="w-3 h-3" /> Reload
+                              <ExternalLink className="w-4 h-4" />
+                              Open in JupyterLab
                             </Button>
-                          </div>
-                          <iframe
-                            src={viewerUrl}
-                            className="w-full rounded-xl border border-border/20 h-[500px]"
-                            title="CadQuery 3D Viewer"
-                            sandbox="allow-scripts allow-same-origin allow-forms"
-                          />
-                        </div>
+                          </CardContent>
+                        </Card>
                       )}
                     </div>
                   )}
