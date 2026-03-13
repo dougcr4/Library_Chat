@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Save, Send, Bot, User, Box, Loader2, RotateCw, AlertTriangle } from "lucide-react";
-import { useDesignerContext, useStyles, useItems, useGenerateModel, useBuildingsCatalogue, useGenerateBuilding } from "@/hooks/useDesigner";
+import { useDesignerContext, useStyles, useItems, useGenerateModel, useBuildingsCatalogue, useGenerateBuilding, useSettings } from "@/hooks/useDesigner";
 import SaveProjectDialog from "./SaveProjectDialog";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -25,8 +25,10 @@ export default function ChatPanel() {
   const { data: stylesData } = useStyles();
   const { data: itemsData } = useItems();
   const { data: catalogueData } = useBuildingsCatalogue();
+  const { data: settingsData } = useSettings();
   const generateModel = useGenerateModel();
   const generateBuilding = useGenerateBuilding();
+  const cadqueryViewerUrl = settingsData?.cadqueryViewerUrl || "http://localhost:5000";
   
   const [isSaveOpen, setIsSaveOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -192,12 +194,12 @@ export default function ChatPanel() {
                           <pre className="text-muted-foreground">{msg.content}</pre>
                         </div>
                       )}
-                      <div className="w-full bg-[#1a1c1e] rounded-xl border border-border/20 h-[350px] flex flex-col items-center justify-center text-muted-foreground shadow-inner relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
-                        <RotateCw className="w-10 h-10 mb-4 opacity-50" />
-                        <p className="font-medium tracking-wide text-lg text-gray-300">3D Model Viewer</p>
-                        <p className="text-sm opacity-50 mt-1 text-gray-400">Interactive preview would appear here</p>
-                      </div>
+                      <iframe
+                        src={cadqueryViewerUrl}
+                        className="w-full rounded-xl border border-border/20 h-[450px]"
+                        title="CadQuery 3D Viewer"
+                        sandbox="allow-scripts allow-same-origin allow-forms"
+                      />
                     </div>
                   )}
                 </div>

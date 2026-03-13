@@ -1,4 +1,6 @@
 import { Router, type IRouter } from "express";
+import { writeFile } from "fs/promises";
+import { join } from "path";
 import { db } from "@workspace/db";
 import { settingsTable, projectsTable } from "@workspace/db/schema";
 import {
@@ -60,6 +62,10 @@ router.post("/furniture/generate", async (req, res) => {
         ollamaUrl: "http://localhost:11434",
         ollamaModel: "qwen2.5:14b",
         openWebUiUrl: "http://localhost:3001",
+        cadqueryViewerUrl: "http://localhost:5000",
+        jupyterLabUrl: "http://localhost:8888",
+        sharedDesignsPath: "/home/douglas/DockerProjects/LLM-3D/shared_designs",
+        fitoutCatalogueJson: null,
         updatedAt: new Date(),
       };
     }
@@ -102,6 +108,18 @@ Return ONLY the Python script, no explanations.`;
 
       const ollamaData = await ollamaResponse.json() as { response?: string };
       modelOutput = ollamaData.response ?? null;
+
+      // Write the script to the shared designs folder for CadQuery server to pick up
+      if (modelOutput && settings.sharedDesignsPath) {
+        try {
+          let code = modelOutput;
+          const codeMatch = modelOutput.match(/```(?:python)?\n?([\s\S]*?)\n?```/);
+          if (codeMatch) code = codeMatch[1];
+          await writeFile(join(settings.sharedDesignsPath, "latest_design.py"), code, "utf8");
+        } catch (writeErr) {
+          console.error("Failed to write design file:", writeErr);
+        }
+      }
     } catch (err) {
       console.error("Ollama error:", err);
       status = "error";
