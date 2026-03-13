@@ -73,11 +73,14 @@ router.post("/furniture/generate", async (req, res) => {
     const style = STYLES.find(s => s.id === body.styleId);
     const item = ITEMS.find(i => i.id === body.itemId);
 
-    const systemPrompt = `You are a CadQuery 3D modelling expert specialising in garden furniture. 
+    const systemPrompt = `You are a CadQuery 3D modelling expert specialising in garden furniture.
 Generate a Python CadQuery script that creates a 3D model based on the user's description.
-The script must be complete, runnable, and follow CadQuery best practices.
-Include all necessary imports. Use real dimensions from the prompt.
-Return ONLY the Python script, no explanations.`;
+Rules:
+- Import cadquery as cq at the top.
+- Use real dimensions from the prompt (in millimetres).
+- The LAST line of the script MUST assign the final assembled model to a variable called result, e.g.: result = assembly
+- Do NOT call show(), exporters.export(), or any file-saving function.
+- Return ONLY the Python script with no explanation, no markdown fences.`;
 
     const userPrompt = [
       style ? `Style: ${style.name} - ${style.description}` : "",
