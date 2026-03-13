@@ -58,7 +58,7 @@ router.post("/furniture/generate", async (req, res) => {
       settings = {
         id: "default",
         ollamaUrl: "http://localhost:11434",
-        ollamaModel: "qwen2.5",
+        ollamaModel: "qwen2.5:14b",
         openWebUiUrl: "http://localhost:3001",
         updatedAt: new Date(),
       };

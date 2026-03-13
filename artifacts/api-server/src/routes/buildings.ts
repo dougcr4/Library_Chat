@@ -511,7 +511,7 @@ router.post("/buildings/generate", async (req, res) => {
       settings = {
         id: "default",
         ollamaUrl: "http://localhost:11434",
-        ollamaModel: "qwen2.5",
+        ollamaModel: "qwen2.5:14b",
         openWebUiUrl: "http://localhost:3001",
         cadqueryViewerUrl: "http://localhost:5000",
         jupyterLabUrl: "http://localhost:8888",
