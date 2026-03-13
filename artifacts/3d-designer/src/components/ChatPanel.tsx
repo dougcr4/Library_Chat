@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Save, Send, Bot, User, Box, Loader2, RotateCw, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
@@ -168,7 +167,7 @@ export default function ChatPanel() {
   const hasFlags = selectedSize && (selectedSize.planningFlag || selectedSize.buildingRegsFlag);
 
   return (
-    <div className="flex flex-col h-full bg-background relative">
+    <div className="flex flex-col h-full bg-background overflow-hidden">
       <header className="flex-none h-16 border-b border-border flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm z-10 shadow-sm">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">
           {mode === 'furniture' ? 'Garden Furniture Designer' : 'Garden Buildings Designer'}
@@ -185,8 +184,8 @@ export default function ChatPanel() {
         </div>
       </header>
 
-      <ScrollArea className="flex-1 p-6" ref={scrollRef}>
-        <div className="max-w-4xl mx-auto space-y-6 pb-24">
+      <div className="flex-1 overflow-y-auto p-6" ref={scrollRef}>
+        <div className="max-w-4xl mx-auto space-y-6 pb-4">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[50vh] text-center max-w-lg mx-auto space-y-4 animate-in fade-in zoom-in duration-500">
               <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-2 shadow-sm">
@@ -252,9 +251,9 @@ export default function ChatPanel() {
             ))
           )}
         </div>
-      </ScrollArea>
+      </div>
 
-      <div className="p-4 bg-background/80 backdrop-blur-md border-t border-border absolute bottom-0 left-0 right-0 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+      <div className="flex-none p-4 bg-background/80 backdrop-blur-md border-t border-border shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
         <div className="max-w-4xl mx-auto flex flex-col gap-3">
           
           {mode === 'furniture' && (selectedStyle || selectedItem) && (
