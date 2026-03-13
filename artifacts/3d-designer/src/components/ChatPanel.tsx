@@ -59,8 +59,9 @@ export default function ChatPanel() {
   const { data: settingsData } = useSettings();
   const generateModel = useGenerateModel();
   const generateBuilding = useGenerateBuilding();
-  const cadqueryViewerUrl = settingsData?.cadqueryViewerUrl || "http://localhost:5000";
+  const cadqueryBaseUrl = settingsData?.cadqueryViewerUrl || "http://localhost:5000";
   const [pipelineStage, setPipelineStage] = useState(0);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const stageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isPending = generateModel.isPending || generateBuilding.isPending;
@@ -111,6 +112,10 @@ export default function ChatPanel() {
       setPipelineStage(2);
       setTimeout(() => {
         setPipelineStage(3);
+        // Build the viewer URL pointing to the latest_design module, with a
+        // cache-busting timestamp so the iframe reloads every time.
+        const url = `${cadqueryBaseUrl}?module=latest_design&t=${Date.now()}`;
+        setViewerUrl(url);
         setTimeout(() => {
           setMessages(prev => {
             const newMessages = [...prev];
@@ -238,12 +243,26 @@ export default function ChatPanel() {
                           <pre className="text-muted-foreground">{msg.content}</pre>
                         </div>
                       )}
-                      <iframe
-                        src={cadqueryViewerUrl}
-                        className="w-full rounded-xl border border-border/20 h-[450px]"
-                        title="CadQuery 3D Viewer"
-                        sandbox="allow-scripts allow-same-origin allow-forms"
-                      />
+                      {viewerUrl && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-xs font-medium text-muted-foreground">3D Viewer — CadQuery Server</span>
+                            <Button
+                              variant="ghost" size="sm"
+                              className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                              onClick={() => setViewerUrl(`${cadqueryBaseUrl}?module=latest_design&t=${Date.now()}`)}
+                            >
+                              <RotateCw className="w-3 h-3" /> Reload
+                            </Button>
+                          </div>
+                          <iframe
+                            src={viewerUrl}
+                            className="w-full rounded-xl border border-border/20 h-[500px]"
+                            title="CadQuery 3D Viewer"
+                            sandbox="allow-scripts allow-same-origin allow-forms"
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
