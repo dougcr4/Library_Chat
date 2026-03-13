@@ -548,7 +548,7 @@ Include all imports. Output ONLY the Python script, no explanations.`;
     const userPrompt = [
       `Shell design: ${design?.name ?? body.designId} (${design?.code ?? ""}) — ${design?.description ?? ""}`,
       `Size: ${size?.name ?? body.sizeId}${size?.approxWidth ? ` (~${size.approxWidth} × ${size.approxLength}mm)` : ""}`,
-      `SIP panel: ${sip?.label ?? body.sipThicknessId} (standard panel width 1222mm)`,
+      sip ? `SIP panel: ${sip.label} (standard panel width 1222mm)` : "SIP panel: standard 144mm (OSB 22 + EPS 122, standard panel width 1222mm)",
       body.fitoutSelections.length > 0 ? `Fit-out selections:\n  ${fitoutSummary}` : "",
       body.additionalNotes ? `Additional notes: ${body.additionalNotes}` : "",
     ].filter(Boolean).join("\n");

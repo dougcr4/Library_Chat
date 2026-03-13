@@ -1,0 +1,52 @@
+> @workspace/api-server@0.0.0 dev /home/douglas/Desktop/3D-Design/Library-Chat/artifacts/api-server
+> NODE_ENV=development tsx ./src/index.ts
+
+Server listening on port 8080
+Ollama error: Error: Ollama responded with 405
+    at <anonymous> (/home/douglas/Desktop/3D-Design/Library-Chat/artifacts/api-server/src/routes/furniture.ts:106:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Generate building error: ZodError: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "sipThicknessId"
+    ],
+    "message": "Required"
+  }
+]
+    at get error [as error] (file:///home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/types.js:39:31)
+    at ZodObject.parse (file:///home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/types.js:114:22)
+    at <anonymous> (/home/douglas/Desktop/3D-Design/Library-Chat/artifacts/api-server/src/routes/buildings.ts:507:41)
+    at Layer.handleRequest (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at /home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:295:15
+    at processParams (/home/douglas/Desktop/3D-Design/Library-Chat/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12) {
+  issues: [
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    }
+  ],
+  addIssue: [Function (anonymous)],
+  addIssues: [Function (anonymous)],
+  errors: [
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    }
+  ]
+}
+^C/home/douglas/Desktop/3D-Design/Library-Chat/artifacts/api-server:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 dev: `NODE_ENV=development tsx ./src/index.ts`
+Command failed with signal "SIGINT"

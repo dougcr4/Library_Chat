@@ -176,7 +176,7 @@ export const GetBuildingsCatalogueResponse = zod.object({
 export const GenerateBuilding3DBody = zod.object({
   designId: zod.string(),
   sizeId: zod.string(),
-  sipThicknessId: zod.string(),
+  sipThicknessId: zod.string().optional().nullable(),
   fitoutSelections: zod.array(
     zod.object({
       sectionId: zod.string(),
