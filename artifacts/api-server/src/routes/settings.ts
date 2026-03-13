@@ -10,7 +10,7 @@ const DEFAULTS = {
   openWebUiUrl: "http://localhost:3001",
   cadqueryViewerUrl: "http://localhost:5000",
   jupyterLabUrl: "http://localhost:8888",
-  sharedDesignsPath: "/home/douglas/DockerProjects/LLM-3D/shared_designs",
+  sharedDesignsPath: "/home/douglas/Documents/DockerProjects/LLM-3D/shared_designs",
 };
 
 const router: IRouter = Router();
