@@ -1,6 +1,5 @@
-import { writeFile } from "fs/promises";
-import { join } from "path";
 import { Router, type IRouter } from "express";
+import { writeDesignFiles } from "../lib/design-writer";
 import { db } from "@workspace/db";
 import { settingsTable } from "@workspace/db/schema";
 import {
@@ -583,16 +582,11 @@ Rules:
       const ollamaData = await ollamaResponse.json() as { response?: string };
       modelOutput = ollamaData.response ?? null;
 
-      // Write the script to the shared designs folder
       if (modelOutput && settings.sharedDesignsPath) {
         try {
-          let code = modelOutput;
-          const codeMatch = modelOutput.match(/```(?:python)?\n?([\s\S]*?)\n?```/);
-          if (codeMatch) code = codeMatch[1];
-          await writeFile(join(settings.sharedDesignsPath, "latest_design.py"), code, "utf8");
-          console.log("Wrote latest_design.py to", settings.sharedDesignsPath);
+          await writeDesignFiles(settings.sharedDesignsPath, modelOutput);
         } catch (writeErr) {
-          console.error("Failed to write design file:", writeErr);
+          console.error("Failed to write design files:", writeErr);
         }
       }
     } catch (err) {

@@ -247,13 +247,13 @@ export default function ChatPanel() {
                             <div>
                               <p className="font-semibold text-sm text-green-800 dark:text-green-300">Script ready in JupyterLab</p>
                               <p className="text-xs text-green-700/80 dark:text-green-400/80 mt-0.5">
-                                Open <span className="font-mono">latest_design.py</span> and run the cell to render your 3D model.
+                                Opens <span className="font-mono">view_latest.ipynb</span> — run all cells to render the 3D model.
                               </p>
                             </div>
                             <Button
                               size="sm"
                               className="shrink-0 gap-2 bg-green-700 hover:bg-green-800 text-white dark:bg-green-700 dark:hover:bg-green-600"
-                              onClick={() => window.open(`${jupyterLabUrl}/lab/tree/latest_design.py`, "_blank")}
+                              onClick={() => window.open(`${jupyterLabUrl}/lab/tree/view_latest.ipynb`, "_blank")}
                             >
                               <ExternalLink className="w-4 h-4" />
                               Open in JupyterLab
