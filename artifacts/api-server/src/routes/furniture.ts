@@ -122,6 +122,7 @@ Rules:
           const codeMatch = modelOutput.match(/```(?:python)?\n?([\s\S]*?)\n?```/);
           if (codeMatch) code = codeMatch[1];
           await writeFile(join(settings.sharedDesignsPath, "latest_design.py"), code, "utf8");
+          console.log("Wrote latest_design.py to", settings.sharedDesignsPath);
         } catch (writeErr) {
           console.error("Failed to write design file:", writeErr);
         }
