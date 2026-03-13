@@ -30,12 +30,12 @@ export const GetSettingsResponse = zod.object({
  * @summary Update application settings
  */
 export const UpdateSettingsBody = zod.object({
-  ollamaUrl: zod.string(),
-  ollamaModel: zod.string(),
-  openWebUiUrl: zod.string(),
-  cadqueryViewerUrl: zod.string(),
-  jupyterLabUrl: zod.string(),
-  sharedDesignsPath: zod.string(),
+  ollamaUrl: zod.string().optional(),
+  ollamaModel: zod.string().optional(),
+  openWebUiUrl: zod.string().optional(),
+  cadqueryViewerUrl: zod.string().optional(),
+  jupyterLabUrl: zod.string().optional(),
+  sharedDesignsPath: zod.string().optional(),
 });
 
 export const UpdateSettingsResponse = zod.object({

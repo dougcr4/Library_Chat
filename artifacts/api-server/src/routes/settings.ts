@@ -42,11 +42,16 @@ router.put("/settings", async (req, res) => {
   try {
     const body = UpdateSettingsBody.parse(req.body);
 
+    // Strip undefined fields so partial updates don't overwrite existing values
+    const patch = Object.fromEntries(
+      Object.entries(body).filter(([, v]) => v !== undefined)
+    );
+
     const [updated] = await db.insert(settingsTable)
-      .values({ id: "default", ...body, updatedAt: new Date() })
+      .values({ id: "default", ...DEFAULTS, ...patch, updatedAt: new Date() })
       .onConflictDoUpdate({
         target: settingsTable.id,
-        set: { ...body, updatedAt: new Date() },
+        set: { ...patch, updatedAt: new Date() },
       })
       .returning();
 
