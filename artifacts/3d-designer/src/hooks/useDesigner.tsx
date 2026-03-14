@@ -236,3 +236,18 @@ export function useGenerateBuilding() {
     }
   });
 }
+
+export function useFixDesign() {
+  return useMutation({
+    mutationFn: async (error?: string) => {
+      const res = await fetch('/api/fix-design', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: error ?? '' })
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Failed to fix design');
+      return result;
+    }
+  });
+}

@@ -5,6 +5,7 @@ import furnitureRouter from "./furniture";
 import buildingsRouter from "./buildings";
 import projectsRouter from "./projects";
 import adminRouter from "./admin";
+import fixDesignRouter from "./fix-design";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(furnitureRouter);
 router.use(buildingsRouter);
 router.use(projectsRouter);
 router.use(adminRouter);
+router.use(fixDesignRouter);
 
 export default router;

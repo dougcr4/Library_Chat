@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Save, Send, Bot, User, ExternalLink, RotateCw, Loader2, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
-import { useDesignerContext, useStyles, useItems, useGenerateModel, useBuildingsCatalogue, useGenerateBuilding, useSettings } from "@/hooks/useDesigner";
+import { Plus, Save, Send, Bot, User, ExternalLink, RotateCw, Loader2, AlertTriangle, CheckCircle2, Circle, Wand2 } from "lucide-react";
+import { useDesignerContext, useStyles, useItems, useGenerateModel, useBuildingsCatalogue, useGenerateBuilding, useSettings, useFixDesign } from "@/hooks/useDesigner";
 import SaveProjectDialog from "./SaveProjectDialog";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -59,6 +59,7 @@ export default function ChatPanel() {
   const { data: settingsData } = useSettings();
   const generateModel = useGenerateModel();
   const generateBuilding = useGenerateBuilding();
+  const fixDesign = useFixDesign();
   const jupyterLabUrl = (settingsData?.jupyterLabUrl || "http://localhost:8888").replace(/\/$/, "");
   const cadqueryBaseUrl = (settingsData?.cadqueryViewerUrl || "http://localhost:5000").replace(/\/$/, "");
   const [pipelineStage, setPipelineStage] = useState(0);
@@ -249,13 +250,42 @@ export default function ChatPanel() {
                         <div className="space-y-2">
                           <div className="flex items-center justify-between px-1">
                             <span className="text-xs font-medium text-muted-foreground">3D Viewer — CadQuery Server</span>
-                            <Button
-                              variant="ghost" size="sm"
-                              className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-                              onClick={() => setViewerUrl(`${cadqueryBaseUrl}?module=latest_design&t=${Date.now()}`)}
-                            >
-                              <RotateCw className="w-3 h-3" /> Reload
-                            </Button>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost" size="sm"
+                                className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                                disabled={fixDesign.isPending}
+                                title="Ask AI to fix the script — paste the error from the viewer into the prompt box first for best results"
+                                onClick={() => {
+                                  const errorHint = currentPrompt.trim() || undefined;
+                                  fixDesign.mutate(errorHint, {
+                                    onSuccess: () => {
+                                      setCurrentPrompt("");
+                                      setViewerUrl(`${cadqueryBaseUrl}?module=latest_design&t=${Date.now()}`);
+                                    },
+                                    onError: (err) => {
+                                      setMessages(prev => [...prev, {
+                                        role: 'system' as const,
+                                        content: `Fix failed: ${err.message}`,
+                                        type: 'error' as const,
+                                        isGenerating: false,
+                                      }]);
+                                    }
+                                  });
+                                }}
+                              >
+                                {fixDesign.isPending
+                                  ? <><Loader2 className="w-3 h-3 animate-spin" /> Fixing…</>
+                                  : <><Wand2 className="w-3 h-3" /> Fix Script</>}
+                              </Button>
+                              <Button
+                                variant="ghost" size="sm"
+                                className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                                onClick={() => setViewerUrl(`${cadqueryBaseUrl}?module=latest_design&t=${Date.now()}`)}
+                              >
+                                <RotateCw className="w-3 h-3" /> Reload
+                              </Button>
+                            </div>
                           </div>
                           <iframe
                             src={viewerUrl}
