@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Save, Send, Bot, User, ExternalLink, RotateCw, Loader2, AlertTriangle, CheckCircle2, Circle, Wand2 } from "lucide-react";
-import { useDesignerContext, useStyles, useItems, useGenerateModel, useBuildingsCatalogue, useGenerateBuilding, useSettings, useFixDesign } from "@/hooks/useDesigner";
+import { Plus, Save, Send, Bot, User, ExternalLink, RotateCw, Loader2, AlertTriangle, CheckCircle2, Circle, Wand2, Pencil } from "lucide-react";
+import { useDesignerContext, useStyles, useItems, useGenerateModel, useBuildingsCatalogue, useGenerateBuilding, useSettings, useFixDesign, useRefineDesign } from "@/hooks/useDesigner";
 import SaveProjectDialog from "./SaveProjectDialog";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -60,6 +60,7 @@ export default function ChatPanel() {
   const generateModel = useGenerateModel();
   const generateBuilding = useGenerateBuilding();
   const fixDesign = useFixDesign();
+  const refineDesign = useRefineDesign();
   const jupyterLabUrl = (settingsData?.jupyterLabUrl || "http://localhost:8888").replace(/\/$/, "");
   const jupyterLabWorkDir = (settingsData?.jupyterLabWorkDir || "").replace(/^\/|\/$/g, "");
   const notebookUrl = jupyterLabWorkDir
@@ -71,7 +72,8 @@ export default function ChatPanel() {
   const [scriptReady, setScriptReady] = useState(false);
   const stageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isPending = generateModel.isPending || generateBuilding.isPending;
+  const isRefineMode = scriptReady;
+  const isPending = generateModel.isPending || generateBuilding.isPending || refineDesign.isPending;
 
   useEffect(() => {
     if (isPending) {
@@ -101,27 +103,21 @@ export default function ChatPanel() {
 
   const handleSend = () => {
     if (isPending) return;
-    
-    // In building mode, we allow empty prompt if they just want to generate
-    if (mode === 'furniture' && !currentPrompt.trim()) return;
-    
-    const userMessageContent = currentPrompt.trim() || (mode === 'building' ? 'Generate building with selected options' : '');
-    if (!userMessageContent) return;
+    if (!currentPrompt.trim()) return;
 
+    const userMessageContent = currentPrompt.trim();
     const userMessage = { role: 'user' as const, content: userMessageContent, type: 'text' as const };
     const loadingMessage = { role: 'system' as const, content: '', type: 'model' as const, isGenerating: true, stage: 'Initializing...' };
 
-    setScriptReady(false);
-    setViewerUrl(null);
-    setMessages(prev => [...prev, userMessage, loadingMessage]);
-    const promptToSend = currentPrompt;
+    const promptToSend = currentPrompt.trim();
     setCurrentPrompt("");
 
     const handleSuccess = (data: any) => {
+      const newUrl = `${cadqueryBaseUrl}?module=latest_design&t=${Date.now()}`;
       setPipelineStage(2);
       setTimeout(() => {
         setPipelineStage(3);
-        setViewerUrl(`${cadqueryBaseUrl}?module=latest_design&t=${Date.now()}`);
+        setViewerUrl(newUrl);
         setScriptReady(true);
         setTimeout(() => {
           setMessages(prev => {
@@ -143,7 +139,7 @@ export default function ChatPanel() {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = {
           role: 'system',
-          content: err.message.includes('Ollama') 
+          content: err.message.includes('Ollama')
             ? "⚠️ Could not connect to local AI backend. Go to Settings to check your Ollama URL."
             : `Error: ${err.message}`,
           type: 'error',
@@ -152,6 +148,18 @@ export default function ChatPanel() {
         return newMessages;
       });
     };
+
+    // Refinement mode — modify the existing design
+    if (isRefineMode) {
+      setMessages(prev => [...prev, userMessage, loadingMessage]);
+      refineDesign.mutate(promptToSend, { onSuccess: handleSuccess, onError: handleError });
+      return;
+    }
+
+    // Fresh generation
+    setScriptReady(false);
+    setViewerUrl(null);
+    setMessages(prev => [...prev, userMessage, loadingMessage]);
 
     if (mode === 'furniture') {
       generateModel.mutate({
@@ -375,12 +383,23 @@ export default function ChatPanel() {
             </div>
           )}
 
+          {isRefineMode && (
+            <div className="flex items-center gap-2 px-1">
+              <Badge variant="secondary" className="gap-1.5 bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-900/50 font-medium">
+                <Pencil className="w-3 h-3" />
+                Refining existing design
+              </Badge>
+              <span className="text-xs text-muted-foreground">— or click <strong>New Design</strong> to start fresh</span>
+            </div>
+          )}
           <div className="relative flex items-end gap-2 bg-card rounded-2xl border-2 border-input shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all p-2">
             <Textarea 
               className="flex-1 min-h-[64px] max-h-[200px] border-0 focus-visible:ring-0 shadow-none resize-none bg-transparent p-3 text-base leading-relaxed"
-              placeholder={mode === 'furniture' 
-                ? "Describe your furniture with dimensions (e.g. 'Round garden table, 1200mm diameter, 750mm high...')" 
-                : "Any additional notes or bespoke requirements? (e.g. 'include a 2m wide veranda on the south-facing side')"}
+              placeholder={isRefineMode
+                ? "Describe what to change (e.g. 'make the walls 300mm taller' or 'add a window in the front wall')"
+                : mode === 'furniture' 
+                  ? "Describe your furniture with dimensions (e.g. 'Round garden table, 1200mm diameter, 750mm high...')" 
+                  : "Any additional notes or bespoke requirements? (e.g. 'include a 2m wide veranda on the south-facing side')"}
               value={currentPrompt}
               onChange={(e) => setCurrentPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -391,7 +410,7 @@ export default function ChatPanel() {
                 size="icon" 
                 className="rounded-xl w-12 h-12 shadow-sm transition-transform active:scale-95"
                 onClick={handleSend}
-                disabled={isPending || (mode === 'furniture' && !currentPrompt.trim())}
+                disabled={isPending || !currentPrompt.trim()}
               >
                 {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-0.5" />}
               </Button>

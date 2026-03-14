@@ -251,3 +251,18 @@ export function useFixDesign() {
     }
   });
 }
+
+export function useRefineDesign() {
+  return useMutation({
+    mutationFn: async (instruction: string) => {
+      const res = await fetch('/api/refine-design', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction })
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Failed to refine design');
+      return result;
+    }
+  });
+}
