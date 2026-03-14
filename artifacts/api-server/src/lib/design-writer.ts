@@ -1,6 +1,54 @@
 import { writeFile } from "fs/promises";
 import { join } from "path";
 
+/**
+ * Sanitise a raw AI-generated script so it is compatible with
+ * cadquery-server (cq-server).
+ *
+ * Rules enforced:
+ *  - Strip markdown fences
+ *  - Strip jupyter_cadquery imports and show() calls
+ *  - Strip export / save calls the AI may have added
+ *  - Ensure the last meaningful line is  result = <something>
+ */
+export function sanitiseScript(raw: string): string {
+  // 1. Strip markdown fences
+  const fenceMatch = raw.match(/```(?:python)?\n?([\s\S]*?)\n?```/);
+  let code = fenceMatch ? fenceMatch[1] : raw;
+
+  // 2. Strip jupyter_cadquery imports
+  code = code.replace(/^.*jupyter_cadquery.*$/gm, "");
+
+  // 3. Strip show() calls
+  code = code.replace(/^\s*show\s*\(.*\)\s*$/gm, "");
+
+  // 4. Strip file-export / save calls
+  code = code.replace(
+    /^[^\n]*\.(exportStep|exportStl|exportBrep|export|save)\s*\(.*$/gm,
+    ""
+  );
+
+  // 5. Collapse multiple blank lines left by the stripping above
+  code = code.replace(/\n{3,}/g, "\n\n").trim();
+
+  // 6. Ensure the script ends with  result = <last-assigned variable>
+  //    If the script already has a  result = ...  line, leave it.
+  if (!/^\s*result\s*=/m.test(code)) {
+    // Find the last bare variable assignment: name = cq.Workplane(…) | Assembly(…) | Compound(…) | etc.
+    const assignRe = /^([A-Za-z_]\w*)\s*=/gm;
+    let lastVar: string | null = null;
+    let m: RegExpExecArray | null;
+    while ((m = assignRe.exec(code)) !== null) {
+      lastVar = m[1];
+    }
+    if (lastVar && lastVar !== "result") {
+      code = code + `\n\nresult = ${lastVar}\n`;
+    }
+  }
+
+  return code;
+}
+
 function buildNotebook(designPath: string): string {
   const cell1 = [
     "import re, cadquery as cq\n",
@@ -79,18 +127,14 @@ export async function writeDesignFiles(
   sharedDesignsPath: string,
   rawModelOutput: string
 ): Promise<void> {
-  let code = rawModelOutput;
+  const code = sanitiseScript(rawModelOutput);
 
-  // Strip markdown fences if the AI wrapped the script
-  const codeMatch = rawModelOutput.match(/```(?:python)?\n?([\s\S]*?)\n?```/);
-  if (codeMatch) code = codeMatch[1];
-
-  // Write the raw Python script
+  // Write the sanitised Python script (cq-server compatible)
   const pyPath = join(sharedDesignsPath, "latest_design.py");
   await writeFile(pyPath, code, "utf8");
   console.log("Wrote latest_design.py to", sharedDesignsPath);
 
-  // Write the companion viewer notebook
+  // Write the companion JupyterLab viewer notebook
   const notebookJson = buildNotebook("/home/cq/work/latest_design.py");
   const nbPath = join(sharedDesignsPath, "view_latest.ipynb");
   await writeFile(nbPath, notebookJson, "utf8");

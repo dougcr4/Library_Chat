@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Save, Send, Bot, User, ExternalLink, Loader2, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
+import { Plus, Save, Send, Bot, User, ExternalLink, RotateCw, Loader2, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
 import { useDesignerContext, useStyles, useItems, useGenerateModel, useBuildingsCatalogue, useGenerateBuilding, useSettings } from "@/hooks/useDesigner";
 import SaveProjectDialog from "./SaveProjectDialog";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +12,7 @@ const PIPELINE_STAGES = [
   { key: 'ai',     label: 'Calling AI model',          detail: 'Sending prompt to Ollama…'                          },
   { key: 'script', label: 'Generating CadQuery script', detail: 'AI writing Python (30–90 s)…'                       },
   { key: 'write',  label: 'Writing design file',        detail: 'Saving latest_design.py to shared designs folder…' },
-  { key: 'ready',  label: 'Ready in JupyterLab',        detail: 'Open JupyterLab to view and run the 3D model…'     },
+  { key: 'viewer', label: 'Loading 3D viewer',          detail: 'CadQuery server rendering model…'                  },
 ];
 
 function PipelineProgress({ stageIndex }: { stageIndex: number }) {
@@ -60,7 +60,9 @@ export default function ChatPanel() {
   const generateModel = useGenerateModel();
   const generateBuilding = useGenerateBuilding();
   const jupyterLabUrl = (settingsData?.jupyterLabUrl || "http://localhost:8888").replace(/\/$/, "");
+  const cadqueryBaseUrl = (settingsData?.cadqueryViewerUrl || "http://localhost:5000").replace(/\/$/, "");
   const [pipelineStage, setPipelineStage] = useState(0);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [scriptReady, setScriptReady] = useState(false);
   const stageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -105,6 +107,7 @@ export default function ChatPanel() {
     const loadingMessage = { role: 'system' as const, content: '', type: 'model' as const, isGenerating: true, stage: 'Initializing...' };
 
     setScriptReady(false);
+    setViewerUrl(null);
     setMessages(prev => [...prev, userMessage, loadingMessage]);
     const promptToSend = currentPrompt;
     setCurrentPrompt("");
@@ -113,6 +116,7 @@ export default function ChatPanel() {
       setPipelineStage(2);
       setTimeout(() => {
         setPipelineStage(3);
+        setViewerUrl(`${cadqueryBaseUrl}?module=latest_design&t=${Date.now()}`);
         setScriptReady(true);
         setTimeout(() => {
           setMessages(prev => {
@@ -241,13 +245,33 @@ export default function ChatPanel() {
                           <pre className="text-muted-foreground">{msg.content}</pre>
                         </div>
                       )}
+                      {viewerUrl && idx === messages.length - 1 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-xs font-medium text-muted-foreground">3D Viewer — CadQuery Server</span>
+                            <Button
+                              variant="ghost" size="sm"
+                              className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                              onClick={() => setViewerUrl(`${cadqueryBaseUrl}?module=latest_design&t=${Date.now()}`)}
+                            >
+                              <RotateCw className="w-3 h-3" /> Reload
+                            </Button>
+                          </div>
+                          <iframe
+                            src={viewerUrl}
+                            className="w-full rounded-xl border border-border/20 h-[480px]"
+                            title="CadQuery 3D Viewer"
+                            sandbox="allow-scripts allow-same-origin allow-forms"
+                          />
+                        </div>
+                      )}
                       {scriptReady && idx === messages.length - 1 && (
                         <Card className="border-green-200 bg-green-50 dark:border-green-900/40 dark:bg-green-950/20 shadow-sm">
                           <CardContent className="p-4 flex items-center justify-between gap-4">
                             <div>
-                              <p className="font-semibold text-sm text-green-800 dark:text-green-300">Script ready in JupyterLab</p>
+                              <p className="font-semibold text-sm text-green-800 dark:text-green-300">Also available in JupyterLab</p>
                               <p className="text-xs text-green-700/80 dark:text-green-400/80 mt-0.5">
-                                Opens <span className="font-mono">view_latest.ipynb</span> — run all cells to render the 3D model.
+                                Opens <span className="font-mono">view_latest.ipynb</span> — run all cells for an interactive 3D view.
                               </p>
                             </div>
                             <Button
