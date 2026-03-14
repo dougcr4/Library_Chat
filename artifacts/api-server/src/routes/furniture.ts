@@ -75,11 +75,14 @@ router.post("/furniture/generate", async (req, res) => {
     const systemPrompt = `You are a CadQuery 3D modelling expert specialising in garden furniture.
 Generate a Python CadQuery script that creates a 3D model based on the user's description.
 Rules:
-- First line must be: import cadquery as cq
+- Line 1: import cadquery as cq
+- Line 2: from cq_server.ui import ui, show_object
+- Define ALL variables before using them.
 - Use real dimensions from the prompt (in millimetres).
 - Build the model using CadQuery Workplane operations.
-- The LAST line of the script MUST be: result = <the final assembled CadQuery object>
-- Do NOT import or call jupyter_cadquery, show(), exporters, or any file-saving function.
+- Second to last line: result = <the final assembled CadQuery object>
+- Last line: show_object(result)
+- Do NOT call exporters, save(), or any file-writing function.
 - Return ONLY the raw Python script — no explanations, no markdown fences.`;
 
     const userPrompt = [

@@ -542,12 +542,15 @@ router.post("/buildings/generate", async (req, res) => {
     const systemPrompt = `You are a CadQuery 3D modelling expert specialising in SIP (Structural Insulated Panel) garden buildings.
 Generate a complete Python CadQuery script that models the building shell described below.
 Rules:
-- First line must be: import cadquery as cq
+- Line 1: import cadquery as cq
+- Line 2: from cq_server.ui import ui, show_object
+- Define ALL variables before using them.
 - SIP standard panel: width 1222mm, lengths 2440mm or 3050mm. Use the provided SIP thickness for wall depth.
 - Use the provided size dimensions to calculate the overall building footprint.
 - Build all walls, floor, and roof as CadQuery Workplane objects combined into a single assembly.
-- The LAST line of the script MUST be: result = <the final assembled CadQuery object>
-- Do NOT import or call jupyter_cadquery, show(), exporters, or any file-saving function.
+- Second to last line: result = <the final assembled CadQuery object>
+- Last line: show_object(result)
+- Do NOT call exporters, save(), or any file-writing function.
 - Return ONLY the raw Python script — no explanations, no markdown fences.`;
 
     const userPrompt = [

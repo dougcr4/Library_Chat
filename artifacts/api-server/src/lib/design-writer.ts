@@ -7,9 +7,11 @@ import { join } from "path";
  *
  * Rules enforced:
  *  - Strip markdown fences
- *  - Strip jupyter_cadquery imports and show() calls
- *  - Strip export / save calls the AI may have added
- *  - Ensure the last meaningful line is  result = <something>
+ *  - Strip jupyter_cadquery imports
+ *  - Strip file-export / save calls
+ *  - Strip any stray show() calls (we add our own at the end)
+ *  - Ensure  from cq_server.ui import ui, show_object  is at the top
+ *  - Ensure the script ends with  result = <var>  then  show_object(result)
  */
 export function sanitiseScript(raw: string): string {
   // 1. Strip markdown fences
@@ -19,8 +21,8 @@ export function sanitiseScript(raw: string): string {
   // 2. Strip jupyter_cadquery imports
   code = code.replace(/^.*jupyter_cadquery.*$/gm, "");
 
-  // 3. Strip show() calls
-  code = code.replace(/^\s*show\s*\(.*\)\s*$/gm, "");
+  // 3. Strip any show() / show_object() calls the AI added (we'll add our own)
+  code = code.replace(/^\s*show(?:_object)?\s*\(.*\)\s*$/gm, "");
 
   // 4. Strip file-export / save calls
   code = code.replace(
@@ -28,13 +30,14 @@ export function sanitiseScript(raw: string): string {
     ""
   );
 
-  // 5. Collapse multiple blank lines left by the stripping above
+  // 5. Strip any existing cq_server import (we'll prepend a clean one)
+  code = code.replace(/^.*cq_server.*$/gm, "");
+
+  // 6. Collapse multiple blank lines left by the stripping above
   code = code.replace(/\n{3,}/g, "\n\n").trim();
 
-  // 6. Ensure the script ends with  result = <last-assigned variable>
-  //    If the script already has a  result = ...  line, leave it.
+  // 7. Ensure result = <last variable> exists
   if (!/^\s*result\s*=/m.test(code)) {
-    // Find the last bare variable assignment: name = cq.Workplane(…) | Assembly(…) | Compound(…) | etc.
     const assignRe = /^([A-Za-z_]\w*)\s*=/gm;
     let lastVar: string | null = null;
     let m: RegExpExecArray | null;
@@ -42,7 +45,24 @@ export function sanitiseScript(raw: string): string {
       lastVar = m[1];
     }
     if (lastVar && lastVar !== "result") {
-      code = code + `\n\nresult = ${lastVar}\n`;
+      code = code + `\n\nresult = ${lastVar}`;
+    }
+  }
+
+  // 8. Append show_object(result) as the final line
+  code = code + `\n\nshow_object(result)\n`;
+
+  // 9. Prepend the required cq_server import after any existing cadquery import
+  const cqServerImport = "from cq_server.ui import ui, show_object";
+  if (!code.includes(cqServerImport)) {
+    // Insert right after the last top-level import line
+    code = code.replace(
+      /^(import cadquery.*)/m,
+      `$1\n${cqServerImport}`
+    );
+    // If no cadquery import found, prepend at top
+    if (!code.includes(cqServerImport)) {
+      code = `import cadquery as cq\n${cqServerImport}\n\n${code}`;
     }
   }
 
