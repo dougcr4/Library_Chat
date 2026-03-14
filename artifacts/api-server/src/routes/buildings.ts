@@ -539,17 +539,44 @@ router.post("/buildings/generate", async (req, res) => {
       ].filter(Boolean).join(" → ");
     }).join("\n  ");
 
+    // ── Pre-calculate all building dimensions ──────────────────────────────
+    const wallThicknessMm = sip?.totalMm ?? 144;
+    const wallHeightMm    = 2440;           // Standard SIP panel length
+    const floorThicknessMm = 150;           // Concrete slab
+    const roofThicknessMm  = wallThicknessMm; // SIP roof panel, same as walls
+    const outerWidth  = size?.approxWidth  ?? 4000;
+    const outerLength = size?.approxLength ?? 3000;
+    // Inner clear opening (subtract wall thickness at each end)
+    const innerWidth  = outerWidth  - 2 * wallThicknessMm;
+    const innerLength = outerLength - 2 * wallThicknessMm;
+    // Roof sits on top of wall height (above floor slab)
+    const roofZMm = floorThicknessMm + wallHeightMm;
+
     const systemPrompt = `You are a CadQuery 3D modelling expert specialising in SIP (Structural Insulated Panel) garden buildings.
-Generate a complete Python CadQuery script that models the building shell described below.
-Rules:
+
+SIP CONSTRUCTION KNOWLEDGE:
+- SIP panel composition: two OSB skins (11mm each) bonded to an EPS foam core. Total thickness = OSB + EPS + OSB.
+- Standard panel width: 1222mm. Standard lengths: 2440mm (standard) or 3050mm (tall).
+- Wall height equals the panel length — typically 2440mm for single-storey.
+- Sole plate: 47×100mm timber laid flat under each wall panel (sits on floor slab).
+- Head binder: 47×100mm timber across the top of each wall.
+- Corner junction: panels meet at corners with a 100×100mm or twin 47×100mm spline timber.
+- Flat roof: SIP roof panels span the shorter dimension, laid horizontally, same thickness as walls.
+- Floor: 150mm concrete slab or timber frame on joists — model as a flat box.
+- Walls sit ON TOP of the floor slab, roof sits ON TOP of the walls.
+
+MODELLING APPROACH:
+- Build each component as a named box() then translate() it into position.
+- Front/back walls span the FULL outer width. Left/right walls span the INNER length (outer length minus 2×wall thickness) to fit between front and back.
+- Use cq.Assembly() or successive .union() to combine all parts.
+- All coordinates in millimetres, origin at bottom-left-front corner of the building.
+
+CODING RULES:
 - Line 1: import cadquery as cq
 - Line 2: from cq_server.ui import ui, show_object
-- Define ALL variables before using them.
-- SIP standard panel: width 1222mm, lengths 2440mm or 3050mm. Use the provided SIP thickness for wall depth.
-- Use the provided size dimensions to calculate the overall building footprint.
-- Use ONLY these stable CadQuery Workplane operations: box(), cylinder(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate(), shell(), extrude().
-- Build walls as box() shapes, combine with union(). Do NOT use workplaneFromObject(), copyWorkplane(), or any advanced/deprecated methods.
-- Combine all parts into a single assembly using cq.Assembly() or successive union() calls.
+- Define ALL variables at the top before using them.
+- Use ONLY: box(), cylinder(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate(), extrude().
+- Do NOT use workplaneFromObject(), copyWorkplane(), or any deprecated methods.
 - Second to last line: result = <the final assembled CadQuery object>
 - Last line: show_object(result)
 - Do NOT call exporters, save(), or any file-writing function.
@@ -557,10 +584,29 @@ Rules:
 
     const userPrompt = [
       `Shell design: ${design?.name ?? body.designId} (${design?.code ?? ""}) — ${design?.description ?? ""}`,
-      `Size: ${size?.name ?? body.sizeId}${size?.approxWidth ? ` (~${size.approxWidth} × ${size.approxLength}mm)` : ""}`,
-      sip ? `SIP panel: ${sip.label} (standard panel width 1222mm)` : "SIP panel: standard 144mm (OSB 22 + EPS 122, standard panel width 1222mm)",
+      ``,
+      `EXACT DIMENSIONS TO USE (all in mm):`,
+      `  outer_width        = ${outerWidth}   # building outer footprint width`,
+      `  outer_length       = ${outerLength}   # building outer footprint length`,
+      `  wall_thickness     = ${wallThicknessMm}    # SIP panel total thickness`,
+      `  wall_height        = ${wallHeightMm}   # SIP panel length = wall height`,
+      `  floor_thickness    = ${floorThicknessMm}   # concrete slab`,
+      `  roof_thickness     = ${roofThicknessMm}    # SIP roof panel (same as walls)`,
+      `  inner_width        = ${innerWidth}   # clear inside width (outer - 2×wall)`,
+      `  inner_length       = ${innerLength}   # clear inside length`,
+      `  roof_z             = ${roofZMm}   # z-position of roof bottom (floor + wall height)`,
+      ``,
+      `COMPONENT POSITIONS (translate from Workplane origin):`,
+      `  Floor slab:   box(${outerWidth}, ${outerLength}, ${floorThicknessMm})  at (0, 0, 0)`,
+      `  Front wall:   box(${outerWidth}, ${wallThicknessMm}, ${wallHeightMm})  at (0, 0, ${floorThicknessMm})`,
+      `  Back wall:    box(${outerWidth}, ${wallThicknessMm}, ${wallHeightMm})  at (0, ${outerLength - wallThicknessMm}, ${floorThicknessMm})`,
+      `  Left wall:    box(${wallThicknessMm}, ${innerLength}, ${wallHeightMm}) at (0, ${wallThicknessMm}, ${floorThicknessMm})`,
+      `  Right wall:   box(${wallThicknessMm}, ${innerLength}, ${wallHeightMm}) at (${outerWidth - wallThicknessMm}, ${wallThicknessMm}, ${floorThicknessMm})`,
+      `  Roof slab:    box(${outerWidth}, ${outerLength}, ${roofThicknessMm})   at (0, 0, ${roofZMm})`,
+      ``,
+      sip ? `SIP panel specification: ${sip.label}` : "SIP panel: 144mm (OSB 22 + EPS 122)",
       body.fitoutSelections.length > 0 ? `Fit-out selections:\n  ${fitoutSummary}` : "",
-      body.additionalNotes ? `Additional notes: ${body.additionalNotes}` : "",
+      body.additionalNotes ? `Additional notes / modifications: ${body.additionalNotes}` : "",
     ].filter(Boolean).join("\n");
 
     let modelOutput: string | null = null;
