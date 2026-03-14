@@ -19,6 +19,7 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
     openWebUiUrl: "http://localhost:3001",
     cadqueryViewerUrl: "http://localhost:5000",
     jupyterLabUrl: "http://localhost:8888",
+    jupyterLabWorkDir: "",
     sharedDesignsPath: "/home/douglas/DockerProjects/LLM-3D/shared_designs"
   });
 
@@ -30,6 +31,7 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
         openWebUiUrl: settings.openWebUiUrl || "http://localhost:3001",
         cadqueryViewerUrl: settings.cadqueryViewerUrl || "http://localhost:5000",
         jupyterLabUrl: settings.jupyterLabUrl || "http://localhost:8888",
+        jupyterLabWorkDir: settings.jupyterLabWorkDir || "",
         sharedDesignsPath: settings.sharedDesignsPath || "/home/douglas/DockerProjects/LLM-3D/shared_designs"
       });
     }
@@ -96,6 +98,15 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
                   id="jupyterLabUrl" 
                   value={formData.jupyterLabUrl} 
                   onChange={e => setFormData({...formData, jupyterLabUrl: e.target.value})} 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="jupyterLabWorkDir">JupyterLab Notebook Directory</Label>
+                <Input 
+                  id="jupyterLabWorkDir" 
+                  placeholder="e.g. home/cq/work  (leave blank to open JupyterLab root)"
+                  value={formData.jupyterLabWorkDir} 
+                  onChange={e => setFormData({...formData, jupyterLabWorkDir: e.target.value})} 
                 />
               </div>
               <div className="grid gap-2">

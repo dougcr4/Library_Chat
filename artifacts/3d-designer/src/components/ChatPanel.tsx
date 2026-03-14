@@ -61,6 +61,10 @@ export default function ChatPanel() {
   const generateBuilding = useGenerateBuilding();
   const fixDesign = useFixDesign();
   const jupyterLabUrl = (settingsData?.jupyterLabUrl || "http://localhost:8888").replace(/\/$/, "");
+  const jupyterLabWorkDir = (settingsData?.jupyterLabWorkDir || "").replace(/^\/|\/$/g, "");
+  const notebookUrl = jupyterLabWorkDir
+    ? `${jupyterLabUrl}/lab/tree/${jupyterLabWorkDir}/view_latest.ipynb`
+    : `${jupyterLabUrl}/lab`;
   const cadqueryBaseUrl = (settingsData?.cadqueryViewerUrl || "http://localhost:5000").replace(/\/$/, "");
   const [pipelineStage, setPipelineStage] = useState(0);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
@@ -301,13 +305,15 @@ export default function ChatPanel() {
                             <div>
                               <p className="font-semibold text-sm text-green-800 dark:text-green-300">Also available in JupyterLab</p>
                               <p className="text-xs text-green-700/80 dark:text-green-400/80 mt-0.5">
-                                Opens <span className="font-mono">view_latest.ipynb</span> — run all cells for an interactive 3D view.
+                                {jupyterLabWorkDir
+                                  ? <>Opens <span className="font-mono">view_latest.ipynb</span> — run all cells for an interactive 3D view.</>
+                                  : <>Opens JupyterLab — navigate to <span className="font-mono">view_latest.ipynb</span> and run all cells.</>}
                               </p>
                             </div>
                             <Button
                               size="sm"
                               className="shrink-0 gap-2 bg-green-700 hover:bg-green-800 text-white dark:bg-green-700 dark:hover:bg-green-600"
-                              onClick={() => window.open(`${jupyterLabUrl}/lab/tree/view_latest.ipynb`, "_blank")}
+                              onClick={() => window.open(notebookUrl, "_blank")}
                             >
                               <ExternalLink className="w-4 h-4" />
                               Open in JupyterLab

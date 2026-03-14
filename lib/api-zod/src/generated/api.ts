@@ -23,6 +23,7 @@ export const GetSettingsResponse = zod.object({
   openWebUiUrl: zod.string(),
   cadqueryViewerUrl: zod.string(),
   jupyterLabUrl: zod.string(),
+  jupyterLabWorkDir: zod.string(),
   sharedDesignsPath: zod.string(),
 });
 
@@ -35,6 +36,7 @@ export const UpdateSettingsBody = zod.object({
   openWebUiUrl: zod.string().optional(),
   cadqueryViewerUrl: zod.string().optional(),
   jupyterLabUrl: zod.string().optional(),
+  jupyterLabWorkDir: zod.string().optional(),
   sharedDesignsPath: zod.string().optional(),
 });
 
@@ -44,6 +46,7 @@ export const UpdateSettingsResponse = zod.object({
   openWebUiUrl: zod.string(),
   cadqueryViewerUrl: zod.string(),
   jupyterLabUrl: zod.string(),
+  jupyterLabWorkDir: zod.string(),
   sharedDesignsPath: zod.string(),
 });
 

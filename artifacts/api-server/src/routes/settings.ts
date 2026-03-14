@@ -10,6 +10,7 @@ const DEFAULTS = {
   openWebUiUrl: "http://localhost:3001",
   cadqueryViewerUrl: "http://localhost:5000",
   jupyterLabUrl: "http://localhost:8888",
+  jupyterLabWorkDir: "",
   sharedDesignsPath: "/home/douglas/DockerProjects/LLM-3D/shared_designs",
 };
 
@@ -29,6 +30,7 @@ router.get("/settings", async (_req, res) => {
       openWebUiUrl: settings.openWebUiUrl,
       cadqueryViewerUrl: settings.cadqueryViewerUrl,
       jupyterLabUrl: settings.jupyterLabUrl,
+      jupyterLabWorkDir: settings.jupyterLabWorkDir ?? "",
       sharedDesignsPath: settings.sharedDesignsPath,
     });
     res.json(data);
@@ -61,6 +63,7 @@ router.put("/settings", async (req, res) => {
       openWebUiUrl: updated.openWebUiUrl,
       cadqueryViewerUrl: updated.cadqueryViewerUrl,
       jupyterLabUrl: updated.jupyterLabUrl,
+      jupyterLabWorkDir: updated.jupyterLabWorkDir ?? "",
       sharedDesignsPath: updated.sharedDesignsPath,
     });
     res.json(data);
