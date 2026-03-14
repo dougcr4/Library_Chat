@@ -48,7 +48,8 @@ Rules:
 - Line 1: import cadquery as cq
 - Line 2: from cq_server.ui import ui, show_object
 - Define ALL variables before using them.
-- Use ONLY stable Workplane operations: box(), cylinder(), sphere(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate(), extrude(), revolve().
+- Use ONLY: box(), cylinder(), sphere(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate().
+- Use box() for ALL walls, floor, roof, and slab shapes. Do NOT use extrude(), revolve(), sweep(), or shell() — these require pending wires and will fail.
 - Do NOT use workplaneFromObject(), copyWorkplane(), or any deprecated methods.
 - Keep all parts of the script that the instruction does not change.
 - Second to last line: result = <the final assembled CadQuery object>
