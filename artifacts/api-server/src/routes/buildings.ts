@@ -547,7 +547,9 @@ Rules:
 - Define ALL variables before using them.
 - SIP standard panel: width 1222mm, lengths 2440mm or 3050mm. Use the provided SIP thickness for wall depth.
 - Use the provided size dimensions to calculate the overall building footprint.
-- Build all walls, floor, and roof as CadQuery Workplane objects combined into a single assembly.
+- Use ONLY these stable CadQuery Workplane operations: box(), cylinder(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate(), shell(), extrude().
+- Build walls as box() shapes, combine with union(). Do NOT use workplaneFromObject(), copyWorkplane(), or any advanced/deprecated methods.
+- Combine all parts into a single assembly using cq.Assembly() or successive union() calls.
 - Second to last line: result = <the final assembled CadQuery object>
 - Last line: show_object(result)
 - Do NOT call exporters, save(), or any file-writing function.

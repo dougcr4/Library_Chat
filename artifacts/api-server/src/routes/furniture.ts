@@ -79,7 +79,9 @@ Rules:
 - Line 2: from cq_server.ui import ui, show_object
 - Define ALL variables before using them.
 - Use real dimensions from the prompt (in millimetres).
-- Build the model using CadQuery Workplane operations.
+- Use ONLY these stable CadQuery Workplane operations: box(), cylinder(), sphere(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate(), shell(), extrude(), revolve(), sweep().
+- Combine parts using cq.Assembly() or Workplane.union()/cut().
+- Do NOT use workplaneFromObject(), copyWorkplane(), or any other advanced/deprecated methods.
 - Second to last line: result = <the final assembled CadQuery object>
 - Last line: show_object(result)
 - Do NOT call exporters, save(), or any file-writing function.
