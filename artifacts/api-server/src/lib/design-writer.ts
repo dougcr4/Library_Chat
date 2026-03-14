@@ -30,6 +30,11 @@ export function sanitiseScript(raw: string): string {
     ""
   );
 
+  // 4b. Remove deprecated CadQuery methods that don't exist in current versions
+  //     workplaneFromObject — removed; copyWorkplane — removed
+  code = code.replace(/\.workplaneFromObject\s*\([^)]*\)/g, "");
+  code = code.replace(/\.copyWorkplane\s*\([^)]*\)/g, "");
+
   // 5. Strip any existing cq_server import (we'll prepend a clean one)
   code = code.replace(/^.*cq_server.*$/gm, "");
 
