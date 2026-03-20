@@ -38,6 +38,7 @@ export const settingsTable = pgTable("settings", {
   jupyterLabWorkDir: text("jupyter_lab_work_dir").notNull().default(""),
   sharedDesignsPath: text("shared_designs_path").notNull().default("/home/douglas/DockerProjects/LLM-3D/shared_designs"),
   fitoutCatalogueJson: text("fitout_catalogue_json"),
+  openWebUiApiKey: text("open_web_ui_api_key").notNull().default(""),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 

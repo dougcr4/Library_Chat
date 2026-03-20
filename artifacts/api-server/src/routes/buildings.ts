@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { writeDesignFiles } from "../lib/design-writer";
+import { callLlm } from "../lib/llm-client";
 import { db } from "@workspace/db";
 import { settingsTable } from "@workspace/db/schema";
 import {
@@ -684,22 +685,15 @@ CODING RULES:
     let errorMsg: string | null = null;
 
     try {
-      const ollamaResponse = await fetch(`${settings.ollamaUrl.trim()}/api/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: settings.ollamaModel,
-          system: systemPrompt,
-          prompt: userPrompt,
-          stream: false,
-        }),
-        signal: AbortSignal.timeout(120000),
+      modelOutput = await callLlm({
+        ollamaUrl: settings.ollamaUrl,
+        openWebUiUrl: settings.openWebUiUrl,
+        openWebUiApiKey: settings.openWebUiApiKey,
+        model: settings.ollamaModel,
+        systemPrompt,
+        userPrompt,
+        timeoutMs: 180_000,
       });
-
-      if (!ollamaResponse.ok) throw new Error(`Ollama responded with ${ollamaResponse.status}`);
-
-      const ollamaData = await ollamaResponse.json() as { response?: string };
-      modelOutput = ollamaData.response ?? null;
 
       if (modelOutput && settings.sharedDesignsPath) {
         try {

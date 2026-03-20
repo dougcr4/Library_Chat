@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { writeDesignFiles } from "../lib/design-writer";
+import { callLlm } from "../lib/llm-client";
 import { db } from "@workspace/db";
 import { settingsTable } from "@workspace/db/schema";
 
@@ -15,7 +16,7 @@ router.post("/api/fix-design", async (req, res) => {
       return;
     }
 
-    const { ollamaUrl, ollamaModel, sharedDesignsPath } = settings;
+    const { ollamaUrl, openWebUiUrl, openWebUiApiKey, ollamaModel, sharedDesignsPath } = settings;
 
     if (!ollamaUrl || !ollamaModel) {
       res.status(400).json({ error: "Ollama URL and model must be configured in Settings" });
@@ -57,30 +58,12 @@ Rules:
       ? `This script produced the error: "${errorMsg}"\n\nFix it:\n\n${currentScript}`
       : `Review this CadQuery script and fix any errors (undefined variables, deprecated methods, syntax problems):\n\n${currentScript}`;
 
-    const ollamaRes = await fetch(`${ollamaUrl.trim()}/api/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: ollamaModel,
-        system: systemPrompt,
-        prompt: userPrompt,
-        stream: false,
-      }),
-      signal: AbortSignal.timeout(120_000),
+    const modelOutput = await callLlm({
+      ollamaUrl, openWebUiUrl, openWebUiApiKey,
+      model: ollamaModel,
+      systemPrompt, userPrompt,
+      timeoutMs: 120_000,
     });
-
-    if (!ollamaRes.ok) {
-      const text = await ollamaRes.text();
-      res.status(502).json({ error: `Ollama error: ${text}` });
-      return;
-    }
-
-    const data = (await ollamaRes.json()) as { response?: string };
-    const modelOutput = data.response ?? "";
-    if (!modelOutput) {
-      res.status(502).json({ error: "Ollama returned an empty response" });
-      return;
-    }
 
     await writeDesignFiles(sharedDesignsPath, modelOutput);
 

@@ -15,8 +15,9 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
   
   const [formData, setFormData] = useState({
     ollamaUrl: "http://localhost:11434",
-    ollamaModel: "qwen2.5",
+    ollamaModel: "joshuaokolo/C3Dv0:latest",
     openWebUiUrl: "http://localhost:3001",
+    openWebUiApiKey: "",
     cadqueryViewerUrl: "http://localhost:5000",
     jupyterLabUrl: "http://localhost:8888",
     jupyterLabWorkDir: "",
@@ -27,8 +28,9 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
     if (settings) {
       setFormData({
         ollamaUrl: settings.ollamaUrl || "http://localhost:11434",
-        ollamaModel: settings.ollamaModel || "qwen2.5",
+        ollamaModel: settings.ollamaModel || "joshuaokolo/C3Dv0:latest",
         openWebUiUrl: settings.openWebUiUrl || "http://localhost:3001",
+        openWebUiApiKey: settings.openWebUiApiKey || "",
         cadqueryViewerUrl: settings.cadqueryViewerUrl || "http://localhost:5000",
         jupyterLabUrl: settings.jupyterLabUrl || "http://localhost:8888",
         jupyterLabWorkDir: settings.jupyterLabWorkDir || "",
@@ -83,6 +85,19 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
                   value={formData.openWebUiUrl} 
                   onChange={e => setFormData({...formData, openWebUiUrl: e.target.value})} 
                 />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="openWebUiApiKey">Open-WebUI API Key</Label>
+                <Input 
+                  id="openWebUiApiKey"
+                  type="password"
+                  placeholder="sk-… (leave blank to use Ollama directly)"
+                  value={formData.openWebUiApiKey} 
+                  onChange={e => setFormData({...formData, openWebUiApiKey: e.target.value})} 
+                />
+                <p className="text-xs text-muted-foreground">
+                  When set, all AI calls route through Open-WebUI — enabling your Joshuaokolo CAD Designer knowledge and prompts.
+                </p>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="cadqueryViewerUrl">CadQuery Viewer URL</Label>

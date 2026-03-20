@@ -6,8 +6,9 @@ import { eq } from "drizzle-orm";
 
 const DEFAULTS = {
   ollamaUrl: "http://localhost:11434",
-  ollamaModel: "qwen2.5:14b",
+  ollamaModel: "joshuaokolo/C3Dv0:latest",
   openWebUiUrl: "http://localhost:3001",
+  openWebUiApiKey: "",
   cadqueryViewerUrl: "http://localhost:5000",
   jupyterLabUrl: "http://localhost:8888",
   jupyterLabWorkDir: "",
@@ -28,6 +29,7 @@ router.get("/settings", async (_req, res) => {
       ollamaUrl: settings.ollamaUrl,
       ollamaModel: settings.ollamaModel,
       openWebUiUrl: settings.openWebUiUrl,
+      openWebUiApiKey: settings.openWebUiApiKey ?? "",
       cadqueryViewerUrl: settings.cadqueryViewerUrl,
       jupyterLabUrl: settings.jupyterLabUrl,
       jupyterLabWorkDir: settings.jupyterLabWorkDir ?? "",
@@ -61,6 +63,7 @@ router.put("/settings", async (req, res) => {
       ollamaUrl: updated.ollamaUrl,
       ollamaModel: updated.ollamaModel,
       openWebUiUrl: updated.openWebUiUrl,
+      openWebUiApiKey: updated.openWebUiApiKey ?? "",
       cadqueryViewerUrl: updated.cadqueryViewerUrl,
       jupyterLabUrl: updated.jupyterLabUrl,
       jupyterLabWorkDir: updated.jupyterLabWorkDir ?? "",
