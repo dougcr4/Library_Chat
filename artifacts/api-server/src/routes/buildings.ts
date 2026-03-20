@@ -45,39 +45,94 @@ const TIMBER_SIZES = [
 ];
 
 // ── Shell designs & sizes ───────────────────────────────────────────────────
+// Source: Shell_Configuration_Crib_sheet — Design 1/2/3 = Alpha/Beta/Charlie
+// All roofs are MONO-PITCH (lean-to): front wall is taller than back wall.
 
 const DESIGNS = [
-  { id: "alpha",   code: "DDL-S01-A", name: "Alpha",   description: "Compact rectangular plan · flat roof · contemporary garden room" },
-  { id: "beta",    code: "DDL-S01-B", name: "Beta",    description: "Extended rectangular plan · flat roof · generous open interior" },
-  { id: "charlie", code: "DDL-S01-C", name: "Charlie", description: "Wide plan with integrated entrance canopy · flat roof · premium garden studio" },
+  {
+    id: "alpha",   code: "S01-D1", name: "Alpha",
+    description: "Design 1 — rectangular plan, mono-pitch roof, front door + front window only",
+    doorAreaM2: 2, frontWindowM2: 1.89, lhsWindowM2: 0, rhsWindowM2: 0,
+    glazingM2: { small: 3.89, medium: 4.22, large: 4.58, xlarge: 4.97 },
+  },
+  {
+    id: "beta",    code: "S01-D2", name: "Beta",
+    description: "Design 2 — wider plan, mono-pitch roof, front door + front window + one side window",
+    doorAreaM2: 2, frontWindowM2: 1.89, lhsWindowM2: 1.89, rhsWindowM2: 0,
+    glazingM2: { small: 5.78, medium: 6.27, large: 6.80, xlarge: 7.38 },
+  },
+  {
+    id: "charlie", code: "S01-D3", name: "Charlie",
+    description: "Design 3 — widest plan, mono-pitch roof, front door + front window + both side windows",
+    doorAreaM2: 2, frontWindowM2: 1.89, lhsWindowM2: 1.89, rhsWindowM2: 1.89,
+    glazingM2: { small: 7.67, medium: 8.32, large: 9.03, xlarge: 9.80 },
+  },
 ];
 
-// Source: SIP_Details.pdf rows 10-28
-// Footprint < 15m² = no regs. 15–30m² = BR not required if ≥ 1m from boundary.
+// External width varies by DESIGN as well as size — each cell is (designId)-(sizeId)
+// Source: Shell_Configuration_Crib_sheet rows 20–31
+const DESIGN_DIMS: Record<string, { externalWidthMm: number; externalDepthMm: number }> = {
+  "alpha-small":    { externalWidthMm: 4000, externalDepthMm: 3000 },
+  "alpha-medium":   { externalWidthMm: 4500, externalDepthMm: 3500 },
+  "alpha-large":    { externalWidthMm: 5000, externalDepthMm: 4000 },
+  "alpha-xlarge":   { externalWidthMm: 5500, externalDepthMm: 4500 },
+  "beta-small":     { externalWidthMm: 4500, externalDepthMm: 3000 },
+  "beta-medium":    { externalWidthMm: 5000, externalDepthMm: 3500 },
+  "beta-large":     { externalWidthMm: 5500, externalDepthMm: 4000 },
+  "beta-xlarge":    { externalWidthMm: 6000, externalDepthMm: 4500 },
+  "charlie-small":  { externalWidthMm: 5000, externalDepthMm: 3000 },
+  "charlie-medium": { externalWidthMm: 5500, externalDepthMm: 3500 },
+  "charlie-large":  { externalWidthMm: 6000, externalDepthMm: 4000 },
+  "charlie-xlarge": { externalWidthMm: 6500, externalDepthMm: 4500 },
+};
+
+// Heights, decking and footprint are shared across designs for a given size.
+// Mono-pitch: front (high side) and back (low side) heights differ.
+// Source: Shell_Configuration_Crib_sheet rows 20–38
 const SIZES = [
   {
-    id: "small",    name: "Small",       label: "S",   approxWidth: 4000, approxLength: 3000,
-    footprintM2: 12.00,   planningFlag: false, buildingRegsFlag: false,
+    id: "small",   name: "Small",       label: "S",
+    approxWidth: 4000, approxLength: 3000,
+    frontHeightMm: 2495, backHeightMm: 2345, roofDropMm: 150,
+    deckingWidthMm: 900,  deckingAreaM2: 3.6,  footprintM2: 12.00,
+    roofOvhFrontMm: 300, roofOvhSidesMm: 200, roofTopsideM2: 15.40,
+    planningFlag: false, buildingRegsFlag: false,
     note: "Under 15m² — no planning or building regulations apply",
   },
   {
-    id: "medium",   name: "Medium",      label: "M",   approxWidth: 4500, approxLength: 3500,
-    footprintM2: 15.75,   planningFlag: false, buildingRegsFlag: false,
+    id: "medium",  name: "Medium",      label: "M",
+    approxWidth: 4500, approxLength: 3500,
+    frontHeightMm: 2550, backHeightMm: 2375, roofDropMm: 175,
+    deckingWidthMm: 1000, deckingAreaM2: 4.5,  footprintM2: 15.75,
+    roofOvhFrontMm: 300, roofOvhSidesMm: 200, roofTopsideM2: 19.60,
+    planningFlag: false, buildingRegsFlag: false,
     note: "15–30m² — building regulations apply only if structure is within 1m of a boundary",
   },
   {
-    id: "large",    name: "Large",       label: "L",   approxWidth: 5000, approxLength: 4000,
-    footprintM2: 20.00,   planningFlag: false, buildingRegsFlag: true,
+    id: "large",   name: "Large",       label: "L",
+    approxWidth: 5000, approxLength: 4000,
+    frontHeightMm: 2660, backHeightMm: 2460, roofDropMm: 200,
+    deckingWidthMm: 1250, deckingAreaM2: 6.25, footprintM2: 20.00,
+    roofOvhFrontMm: 300, roofOvhSidesMm: 200, roofTopsideM2: 24.30,
+    planningFlag: false, buildingRegsFlag: true,
     note: "15–30m² — building regulations apply if structure is within 1m of a boundary",
   },
   {
-    id: "xlarge",   name: "Extra Large", label: "XL",  approxWidth: 5500, approxLength: 4500,
-    footprintM2: 24.75,   planningFlag: true,  buildingRegsFlag: true,
+    id: "xlarge",  name: "Extra Large", label: "XL",
+    approxWidth: 5500, approxLength: 4500,
+    frontHeightMm: 2700, backHeightMm: 2475, roofDropMm: 225,
+    deckingWidthMm: 1500, deckingAreaM2: 8.25, footprintM2: 24.75,
+    roofOvhFrontMm: 300, roofOvhSidesMm: 200, roofTopsideM2: 29.50,
+    planningFlag: true,  buildingRegsFlag: true,
     note: "Over 15m² — building regulations apply",
   },
   {
-    id: "bespoke",  name: "Bespoke",     label: "B",   approxWidth: null, approxLength: null,
-    footprintM2: null,    planningFlag: true,  buildingRegsFlag: true,
+    id: "bespoke", name: "Bespoke",     label: "B",
+    approxWidth: null, approxLength: null,
+    frontHeightMm: null, backHeightMm: null, roofDropMm: null,
+    deckingWidthMm: null, deckingAreaM2: null, footprintM2: null,
+    roofOvhFrontMm: 300, roofOvhSidesMm: 200, roofTopsideM2: null,
+    planningFlag: true,  buildingRegsFlag: true,
     note: "Dimensions to be agreed — planning and building regulations advice required",
   },
 ];
@@ -539,75 +594,89 @@ router.post("/buildings/generate", async (req, res) => {
       ].filter(Boolean).join(" → ");
     }).join("\n  ");
 
-    // ── Pre-calculate all building dimensions ──────────────────────────────
-    const wallThicknessMm = sip?.totalMm ?? 144;
-    const wallHeightMm    = 2440;           // Standard SIP panel length
-    const floorThicknessMm = 150;           // Concrete slab
-    const roofThicknessMm  = wallThicknessMm; // SIP roof panel, same as walls
-    const outerWidth  = size?.approxWidth  ?? 4000;
-    const outerLength = size?.approxLength ?? 3000;
-    // Inner clear opening (subtract wall thickness at each end)
-    const innerWidth  = outerWidth  - 2 * wallThicknessMm;
-    const innerLength = outerLength - 2 * wallThicknessMm;
-    // Roof sits on top of wall height (above floor slab)
-    const roofZMm = floorThicknessMm + wallHeightMm;
+    // ── Pre-calculate all building dimensions from crib sheet ──────────────
+    const dimKey  = `${body.designId}-${body.sizeId}`;
+    const dims    = DESIGN_DIMS[dimKey];
+    const wallT   = sip?.totalMm ?? 144;          // SIP wall thickness
+    const roofT   = 144;                           // SIP roof panel (144mm standard)
+    const floorT  = 150;                           // Concrete slab
+    const outerW  = dims?.externalWidthMm  ?? 4500;
+    const outerL  = dims?.externalDepthMm  ?? 3500;
+    const frontH  = size?.frontHeightMm   ?? 2550; // High (front) wall height
+    const backH   = size?.backHeightMm    ?? 2375; // Low (back) wall height
+    const roofDrop = size?.roofDropMm     ?? 175;  // Height difference front→back
+    const innerW  = outerW - 2 * wallT;
+    const innerL  = outerL - 2 * wallT;
+    // Slope angle in degrees for the mono-pitch roof
+    const slopeAngleDeg = Math.atan2(roofDrop, outerL) * (180 / Math.PI);
+    // Roof z at back wall (lowest point), front sits higher by roofDrop
+    const roofZBack  = floorT + backH;
+    const roofZFront = floorT + frontH;
 
     const systemPrompt = `You are a CadQuery 3D modelling expert specialising in SIP (Structural Insulated Panel) garden buildings.
 
 SIP CONSTRUCTION KNOWLEDGE:
-- SIP panel composition: two OSB skins (11mm each) bonded to an EPS foam core. Total thickness = OSB + EPS + OSB.
-- Standard panel width: 1222mm. Standard lengths: 2440mm (standard) or 3050mm (tall).
-- Wall height equals the panel length — typically 2440mm for single-storey.
-- Sole plate: 47×100mm timber laid flat under each wall panel (sits on floor slab).
+- SIP panel: two 11mm OSB skins bonded to an EPS foam core. Total = OSB + EPS + OSB.
+- Standard panel width 1222mm. Standard length 2440mm.
+- Sole plate: 47×100mm timber under each wall panel on the floor slab.
 - Head binder: 47×100mm timber across the top of each wall.
-- Corner junction: panels meet at corners with a 100×100mm or twin 47×100mm spline timber.
-- Flat roof: SIP roof panels span the shorter dimension, laid horizontally, same thickness as walls.
-- Floor: 150mm concrete slab or timber frame on joists — model as a flat box.
-- Walls sit ON TOP of the floor slab, roof sits ON TOP of the walls.
+- Corner junction: 100×100mm spline timber at each corner.
+- ROOF IS MONO-PITCH (lean-to): front (south face) is taller than back. The roof panel is a rectangular SIP box tilted to follow the slope.
+- Floor: 150mm concrete slab, modelled as a flat box.
+- Build order: floor slab → front wall (tall) → back wall (short) → side walls → roof panel.
 
-MODELLING APPROACH:
-- Build each component as a named box() then translate() it into position.
-- Front/back walls span the FULL outer width. Left/right walls span the INNER length (outer length minus 2×wall thickness) to fit between front and back.
-- Use cq.Assembly() or successive .union() to combine all parts.
-- All coordinates in millimetres, origin at bottom-left-front corner of the building.
+MONO-PITCH ROOF METHOD (box + rotate):
+1. Create a flat roof box: box(outer_width, outer_length + overhang, roof_thickness).
+2. Rotate it around the X axis by the slope angle (negative = slopes down front-to-back).
+3. Translate it so the front edge sits at (0, -overhang, roof_z_front).
 
 CODING RULES:
 - Line 1: import cadquery as cq
 - Line 2: from cq_server.ui import ui, show_object
 - Define ALL variables at the top before using them.
 - Use ONLY: box(), cylinder(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate().
-- Use box() for ALL walls, floor, roof, and slab shapes. Do NOT use extrude(), revolve(), sweep(), or shell() — these require pending wires and will fail.
-- Do NOT use workplaneFromObject(), copyWorkplane(), or any deprecated methods.
+- Do NOT use extrude(), revolve(), sweep(), shell(), workplaneFromObject(), copyWorkplane().
 - Second to last line: result = <the final assembled CadQuery object>
 - Last line: show_object(result)
 - Do NOT call exporters, save(), or any file-writing function.
 - Return ONLY the raw Python script — no explanations, no markdown fences.`;
 
     const userPrompt = [
-      `Shell design: ${design?.name ?? body.designId} (${design?.code ?? ""}) — ${design?.description ?? ""}`,
+      `Shell: ${design?.name ?? body.designId} (${design?.code ?? ""}) — ${design?.description ?? ""}`,
+      `Size: ${size?.name ?? body.sizeId}`,
       ``,
-      `EXACT DIMENSIONS TO USE (all in mm):`,
-      `  outer_width        = ${outerWidth}   # building outer footprint width`,
-      `  outer_length       = ${outerLength}   # building outer footprint length`,
-      `  wall_thickness     = ${wallThicknessMm}    # SIP panel total thickness`,
-      `  wall_height        = ${wallHeightMm}   # SIP panel length = wall height`,
-      `  floor_thickness    = ${floorThicknessMm}   # concrete slab`,
-      `  roof_thickness     = ${roofThicknessMm}    # SIP roof panel (same as walls)`,
-      `  inner_width        = ${innerWidth}   # clear inside width (outer - 2×wall)`,
-      `  inner_length       = ${innerLength}   # clear inside length`,
-      `  roof_z             = ${roofZMm}   # z-position of roof bottom (floor + wall height)`,
+      `EXACT DIMENSIONS (all mm):`,
+      `  outer_width        = ${outerW}    # external footprint width (front face)`,
+      `  outer_length       = ${outerL}    # external footprint depth (front to back)`,
+      `  wall_thickness     = ${wallT}     # SIP wall panel thickness`,
+      `  roof_thickness     = ${roofT}     # SIP roof panel thickness`,
+      `  floor_thickness    = ${floorT}    # concrete slab`,
+      `  front_wall_height  = ${frontH}   # front (high) wall — floor slab top to head binder`,
+      `  back_wall_height   = ${backH}    # back (low) wall`,
+      `  roof_drop          = ${roofDrop} # height difference front→back (mono-pitch)`,
+      `  slope_angle_deg    = ${slopeAngleDeg.toFixed(3)}  # roof tilt angle`,
+      `  inner_width        = ${innerW}    # clear internal width`,
+      `  inner_length       = ${innerL}    # clear internal depth`,
+      `  roof_z_front       = ${roofZFront}  # z at front wall top`,
+      `  roof_z_back        = ${roofZBack}   # z at back wall top`,
+      `  roof_ovh_front     = ${size?.roofOvhFrontMm ?? 300}  # front roof overhang`,
+      `  roof_ovh_sides     = ${size?.roofOvhSidesMm ?? 200}  # side & rear overhang`,
+      `  decking_width      = ${size?.deckingWidthMm ?? 1000}  # front decking projection`,
       ``,
-      `COMPONENT POSITIONS (translate from Workplane origin):`,
-      `  Floor slab:   box(${outerWidth}, ${outerLength}, ${floorThicknessMm})  at (0, 0, 0)`,
-      `  Front wall:   box(${outerWidth}, ${wallThicknessMm}, ${wallHeightMm})  at (0, 0, ${floorThicknessMm})`,
-      `  Back wall:    box(${outerWidth}, ${wallThicknessMm}, ${wallHeightMm})  at (0, ${outerLength - wallThicknessMm}, ${floorThicknessMm})`,
-      `  Left wall:    box(${wallThicknessMm}, ${innerLength}, ${wallHeightMm}) at (0, ${wallThicknessMm}, ${floorThicknessMm})`,
-      `  Right wall:   box(${wallThicknessMm}, ${innerLength}, ${wallHeightMm}) at (${outerWidth - wallThicknessMm}, ${wallThicknessMm}, ${floorThicknessMm})`,
-      `  Roof slab:    box(${outerWidth}, ${outerLength}, ${roofThicknessMm})   at (0, 0, ${roofZMm})`,
+      `COMPONENT LAYOUT:`,
+      `  Floor slab:   box(${outerW}, ${outerL}, ${floorT}) centred at origin, z bottom = 0`,
+      `  Front wall:   box(${outerW}, ${wallT}, ${frontH}) — full width, front face, sits on floor slab`,
+      `  Back wall:    box(${outerW}, ${wallT}, ${backH})  — full width, back face`,
+      `  Left wall:    box(${wallT}, ${innerL}, ${backH})  — inner length, left side`,
+      `  Right wall:   box(${wallT}, ${innerL}, ${backH})  — inner length, right side`,
+      `  Roof panel:   box(${outerW}, ${outerL}, ${roofT}) then rotate(slope_angle_deg around X) then translate to front top`,
+      `  Decking slab: box(${outerW}, ${size?.deckingWidthMm ?? 1000}, ${floorT}) in front of front wall`,
       ``,
-      sip ? `SIP panel specification: ${sip.label}` : "SIP panel: 144mm (OSB 22 + EPS 122)",
-      body.fitoutSelections.length > 0 ? `Fit-out selections:\n  ${fitoutSummary}` : "",
-      body.additionalNotes ? `Additional notes / modifications: ${body.additionalNotes}` : "",
+      sip ? `SIP specification: ${sip.label}` : "SIP: 144mm (OSB 22 + EPS 122)",
+      design?.lhsWindowM2 ? `LHS window: ${design.lhsWindowM2}m²` : "",
+      design?.rhsWindowM2 ? `RHS window: ${design.rhsWindowM2}m²` : "",
+      body.fitoutSelections.length > 0 ? `Fit-out:\n  ${fitoutSummary}` : "",
+      body.additionalNotes ? `Additional notes: ${body.additionalNotes}` : "",
     ].filter(Boolean).join("\n");
 
     let modelOutput: string | null = null;
