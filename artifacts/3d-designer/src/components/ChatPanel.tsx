@@ -103,9 +103,11 @@ export default function ChatPanel() {
 
   const handleSend = () => {
     if (isPending) return;
-    if (!currentPrompt.trim()) return;
+    if (mode === 'furniture' && !currentPrompt.trim()) return;
 
-    const userMessageContent = currentPrompt.trim();
+    const userMessageContent = currentPrompt.trim() || (mode === 'building'
+      ? `Generate 3D model — ${selectedDesign?.name ?? ""}${selectedSize ? ` · ${selectedSize.name}` : ""}`
+      : "");
     const userMessage = { role: 'user' as const, content: userMessageContent, type: 'text' as const };
     const loadingMessage = { role: 'system' as const, content: '', type: 'model' as const, isGenerating: true, stage: 'Initializing...' };
 
@@ -410,7 +412,7 @@ export default function ChatPanel() {
                 size="icon" 
                 className="rounded-xl w-12 h-12 shadow-sm transition-transform active:scale-95"
                 onClick={handleSend}
-                disabled={isPending || !currentPrompt.trim()}
+                disabled={isPending || (mode === 'furniture' && !currentPrompt.trim())}
               >
                 {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-0.5" />}
               </Button>
