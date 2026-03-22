@@ -1,5 +1,4 @@
 import { Router, type IRouter } from "express";
-import { z } from "zod";
 
 const router: IRouter = Router();
 
@@ -195,15 +194,13 @@ function layoutSlab(face: string, widthMm: number, depthMm: number): FaceSchedul
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
-const RequestBody = z.object({
-  designId:        z.string(),
-  sizeId:          z.string(),
-  sipThicknessId:  z.string(),
-});
-
 router.post("/sip-quantities", (req, res) => {
   try {
-    const body   = RequestBody.parse(req.body);
+    const { designId, sizeId, sipThicknessId } = req.body ?? {};
+    if (typeof designId !== "string" || typeof sizeId !== "string" || typeof sipThicknessId !== "string") {
+      return res.status(400).json({ error: "designId, sizeId and sipThicknessId are required strings" });
+    }
+    const body = { designId, sizeId, sipThicknessId };
     const design = DESIGNS.find(d => d.id === body.designId);
     const size   = SIZES[body.sizeId];
     const sip    = SIP_THICKNESSES[body.sipThicknessId];
