@@ -598,90 +598,98 @@ router.post("/buildings/generate", async (req, res) => {
     // ── Pre-calculate all building dimensions from crib sheet ──────────────
     const dimKey  = `${body.designId}-${body.sizeId}`;
     const dims    = DESIGN_DIMS[dimKey];
-    const wallT   = sip?.totalMm ?? 144;          // SIP wall thickness
-    const roofT   = 144;                           // SIP roof panel (144mm standard)
-    const floorT  = 150;                           // Concrete slab
+    const wallT   = sip?.totalMm ?? 144;
+    const roofT   = 144;
+    const floorT  = 150;
     const outerW  = dims?.externalWidthMm  ?? 4500;
     const outerL  = dims?.externalDepthMm  ?? 3500;
-    const frontH  = size?.frontHeightMm   ?? 2550; // High (front) wall height
-    const backH   = size?.backHeightMm    ?? 2375; // Low (back) wall height
-    const roofDrop = size?.roofDropMm     ?? 175;  // Height difference front→back
-    const innerW  = outerW - 2 * wallT;
+    const frontH  = size?.frontHeightMm   ?? 2550;
+    const backH   = size?.backHeightMm    ?? 2375;
+    const roofDrop = size?.roofDropMm     ?? 175;
     const innerL  = outerL - 2 * wallT;
-    // Slope angle in degrees for the mono-pitch roof
     const slopeAngleDeg = Math.atan2(roofDrop, outerL) * (180 / Math.PI);
-    // Roof z at back wall (lowest point), front sits higher by roofDrop
-    const roofZBack  = floorT + backH;
     const roofZFront = floorT + frontH;
+    const ovhF = size?.roofOvhFrontMm  ?? 300;
+    const ovhS = size?.roofOvhSidesMm  ?? 200;
+    const deckW = size?.deckingWidthMm ?? 1000;
 
-    const systemPrompt = `You are a CadQuery 3D modelling expert specialising in SIP (Structural Insulated Panel) garden buildings.
+    // ── Exact CadQuery centre coordinates (all mm) ─────────────────────────
+    // Building centred at XY origin.  Front face = negative Y.  Z = up.
+    // floor: centre at (0, 0, floorT/2)
+    const flCx = 0, flCy = 0, flCz = Math.round(floorT / 2);
+    // front wall: full outer width, wallT deep, frontH tall
+    const fwCy = -Math.round((outerL - wallT) / 2);
+    const fwCz =  Math.round(floorT + frontH / 2);
+    // back wall: full outer width, wallT deep, backH tall
+    const bwCy =  Math.round((outerL - wallT) / 2);
+    const bwCz =  Math.round(floorT + backH  / 2);
+    // side walls: wallT wide, innerL deep, backH tall
+    const swCx =  Math.round((outerW - wallT) / 2);
+    const swCy = 0;
+    const swCz =  Math.round(floorT + backH  / 2);
+    // roof box (before rotation): width outerW+2*ovhS, length outerL+ovhF+ovhS, height roofT
+    const roofBoxW = outerW + 2 * ovhS;
+    const roofBoxL = outerL + ovhF + ovhS;
+    // After rotation by -slopeAngleDeg around X, translate so front-bottom edge is at z=roofZFront, y=-(outerL/2+ovhF)
+    // Front-bottom corner of unrotated box: (0, -roofBoxL/2, -roofT/2)
+    // After rotate by -slope (radians): y' = y*cos+z*sin, z' = -y*sin+z*cos
+    const sRad = slopeAngleDeg * Math.PI / 180;
+    const fbY = -(roofBoxL / 2);
+    const fbZ = -(roofT / 2);
+    const fbYr = fbY * Math.cos(-sRad) + fbZ * Math.sin(-sRad);
+    const fbZr = -fbY * Math.sin(-sRad) + fbZ * Math.cos(-sRad);
+    const roofTy = Math.round(-(outerL / 2 + ovhF) - fbYr);
+    const roofTz = Math.round(roofZFront - fbZr);
+    // decking: in front of front wall
+    const dkCy = -Math.round(outerL / 2 + deckW / 2);
+    const dkCz = Math.round(floorT / 2);
 
-SIP CONSTRUCTION KNOWLEDGE:
-- SIP panel: two 11mm OSB skins bonded to an EPS foam core. Total = OSB + EPS + OSB.
-- Standard panel width 1222mm. Standard length 2440mm.
-- Sole plate: 47×100mm timber under each wall panel on the floor slab.
-- Head binder: 47×100mm timber across the top of each wall.
-- Corner junction: 100×100mm spline timber at each corner.
-- ROOF IS MONO-PITCH (lean-to): front (south face) is taller than back. The roof panel is a rectangular SIP box tilted to follow the slope.
-- Floor: 150mm concrete slab, modelled as a flat box.
-- Build order: floor slab → front wall (tall) → back wall (short) → side walls → roof panel.
+    // ── Canonical base script (no AI positioning required) ─────────────────
+    const baseScript = [
+      `import cadquery as cq`,
+      `from cq_server.ui import ui, show_object`,
+      `slope_rad = ${slopeAngleDeg.toFixed(4)} / 180.0 * 3.14159`,
+      `floor_slab   = cq.Workplane("XY").box(${outerW}, ${outerL}, ${floorT}).translate((${flCx}, ${flCy}, ${flCz}))`,
+      `front_wall   = cq.Workplane("XY").box(${outerW}, ${wallT}, ${frontH}).translate((0, ${fwCy}, ${fwCz}))`,
+      `back_wall    = cq.Workplane("XY").box(${outerW}, ${wallT}, ${backH}).translate((0, ${bwCy}, ${bwCz}))`,
+      `left_wall    = cq.Workplane("XY").box(${wallT}, ${innerL}, ${backH}).translate((${-swCx}, ${swCy}, ${swCz}))`,
+      `right_wall   = cq.Workplane("XY").box(${wallT}, ${innerL}, ${backH}).translate((${swCx}, ${swCy}, ${swCz}))`,
+      `roof_box     = cq.Workplane("XY").box(${roofBoxW}, ${roofBoxL}, ${roofT})`,
+      `roof_panel   = roof_box.rotate((0, 0, 0), (1, 0, 0), ${(-slopeAngleDeg).toFixed(4)}).translate((0, ${roofTy}, ${roofTz}))`,
+      `decking_slab = cq.Workplane("XY").box(${outerW}, ${deckW}, ${floorT}).translate((0, ${dkCy}, ${dkCz}))`,
+      `result = floor_slab.union(front_wall).union(back_wall).union(left_wall).union(right_wall).union(roof_panel).union(decking_slab)`,
+      `show_object(result)`,
+    ].join("\n");
 
-MONO-PITCH ROOF METHOD (box + rotate):
-1. Create a flat roof box: box(outer_width, outer_length + overhang, roof_thickness).
-2. Rotate it around the X axis by the slope angle (negative = slopes down front-to-back).
-3. Translate it so the front edge sits at (0, -overhang, roof_z_front).
+    const hasFitout = body.fitoutSelections.length > 0 || body.additionalNotes ||
+                      design?.lhsWindowM2 || design?.rhsWindowM2;
 
-CODING RULES:
+    const systemPrompt = `You are a CadQuery 3D modelling expert.
+You will receive a working CadQuery script for a SIP garden building.
+${hasFitout
+  ? `Your task: modify it ONLY to add the requested fit-out features (windows, doors, internal fittings etc.) using boolean cuts or additional boxes. Do NOT change the base structure.`
+  : `Return the script EXACTLY as given — do not change a single character.`}
+
+RULES (violations will break the viewer):
 - Line 1 MUST be: import cadquery as cq
 - Line 2 MUST be: from cq_server.ui import ui, show_object
-- NO other import statements — do NOT import json, math, os, sys, numpy or any other module.
-- Use Python arithmetic directly for any maths (e.g. 2495 / 2 not math.floor(...)).
-- For the roof slope in radians ALWAYS write exactly: slope_rad = slope_angle_deg / 180.0 * 3.14159
-  Then use ONLY the name slope_rad everywhere — never write roof_slope_angle_rad, slope_angle_rad, pitch_rad or any other variant.
-- Define ALL numeric variables at the top before using them.
-- Use ONLY these CadQuery operations: box(), cylinder(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate().
-- BANNED — never use: extrude(), revolve(), sweep(), shell(), workplaneFromObject(), copyWorkplane(), filterByZ(), filterByX(), filterByY(), faces(), edges(), wires(), vertices(), rect(), circle(), polygon(), offset2D(), cutBlind(), cutThruAll(), pad(), pocket().
-- Second to last line: result = <the final assembled CadQuery object>
-- Last line: show_object(result)
-- Do NOT call exporters, save(), or any file-writing function.
-- Return ONLY the raw Python script — no markdown fences, no comments, no explanations.`;
+- NO other imports.
+- ONLY use: box(), cylinder(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate().
+- NEVER use: extrude(), revolve(), sweep(), shell(), faces(), edges(), wires(), filterByZ(), filterByX(), filterByY(), rect(), circle().
+- Last line MUST be: show_object(result)
+- Return ONLY the raw Python — no markdown, no comments, no explanations.`;
 
     const userPrompt = [
-      `Shell: ${design?.name ?? body.designId} (${design?.code ?? ""}) — ${design?.description ?? ""}`,
-      `Size: ${size?.name ?? body.sizeId}`,
-      ``,
-      `EXACT DIMENSIONS (all mm):`,
-      `  outer_width        = ${outerW}    # external footprint width (front face)`,
-      `  outer_length       = ${outerL}    # external footprint depth (front to back)`,
-      `  wall_thickness     = ${wallT}     # SIP wall panel thickness`,
-      `  roof_thickness     = ${roofT}     # SIP roof panel thickness`,
-      `  floor_thickness    = ${floorT}    # concrete slab`,
-      `  front_wall_height  = ${frontH}   # front (high) wall — floor slab top to head binder`,
-      `  back_wall_height   = ${backH}    # back (low) wall`,
-      `  roof_drop          = ${roofDrop} # height difference front→back (mono-pitch)`,
-      `  slope_angle_deg    = ${slopeAngleDeg.toFixed(3)}  # roof tilt angle`,
-      `  inner_width        = ${innerW}    # clear internal width`,
-      `  inner_length       = ${innerL}    # clear internal depth`,
-      `  roof_z_front       = ${roofZFront}  # z at front wall top`,
-      `  roof_z_back        = ${roofZBack}   # z at back wall top`,
-      `  roof_ovh_front     = ${size?.roofOvhFrontMm ?? 300}  # front roof overhang`,
-      `  roof_ovh_sides     = ${size?.roofOvhSidesMm ?? 200}  # side & rear overhang`,
-      `  decking_width      = ${size?.deckingWidthMm ?? 1000}  # front decking projection`,
-      ``,
-      `COMPONENT LAYOUT:`,
-      `  Floor slab:   box(${outerW}, ${outerL}, ${floorT}) centred at origin, z bottom = 0`,
-      `  Front wall:   box(${outerW}, ${wallT}, ${frontH}) — full width, front face, sits on floor slab`,
-      `  Back wall:    box(${outerW}, ${wallT}, ${backH})  — full width, back face`,
-      `  Left wall:    box(${wallT}, ${innerL}, ${backH})  — inner length, left side`,
-      `  Right wall:   box(${wallT}, ${innerL}, ${backH})  — inner length, right side`,
-      `  Roof panel:   box(${outerW}, ${outerL}, ${roofT}) then rotate(slope_angle_deg around X) then translate to front top`,
-      `  Decking slab: box(${outerW}, ${size?.deckingWidthMm ?? 1000}, ${floorT}) in front of front wall`,
-      ``,
-      sip ? `SIP specification: ${sip.label}` : "SIP: 144mm (OSB 22 + EPS 122)",
-      design?.lhsWindowM2 ? `LHS window: ${design.lhsWindowM2}m²` : "",
-      design?.rhsWindowM2 ? `RHS window: ${design.rhsWindowM2}m²` : "",
-      body.fitoutSelections.length > 0 ? `Fit-out:\n  ${fitoutSummary}` : "",
-      body.additionalNotes ? `Additional notes: ${body.additionalNotes}` : "",
+      `Base script for ${design?.name ?? body.designId} ${size?.name ?? body.sizeId}:`,
+      `\`\`\`python`,
+      baseScript,
+      `\`\`\``,
+      hasFitout ? `\nModifications required:` : ``,
+      sip ? `SIP: ${sip.label}` : ``,
+      design?.lhsWindowM2 ? `LHS window: ${design.lhsWindowM2}m²` : ``,
+      design?.rhsWindowM2 ? `RHS window: ${design.rhsWindowM2}m²` : ``,
+      body.fitoutSelections.length > 0 ? `Fit-out:\n  ${fitoutSummary}` : ``,
+      body.additionalNotes ? `Notes: ${body.additionalNotes}` : ``,
     ].filter(Boolean).join("\n");
 
     let modelOutput: string | null = null;
@@ -689,15 +697,20 @@ CODING RULES:
     let errorMsg: string | null = null;
 
     try {
-      modelOutput = await callLlm({
-        ollamaUrl: settings.ollamaUrl,
-        openWebUiUrl: settings.openWebUiUrl,
-        openWebUiApiKey: settings.openWebUiApiKey,
-        model: settings.ollamaModel,
-        systemPrompt,
-        userPrompt,
-        timeoutMs: 180_000,
-      });
+      if (!hasFitout) {
+        // No fit-out: skip the LLM entirely and use the pre-computed script
+        modelOutput = baseScript;
+      } else {
+        modelOutput = await callLlm({
+          ollamaUrl: settings.ollamaUrl,
+          openWebUiUrl: settings.openWebUiUrl,
+          openWebUiApiKey: settings.openWebUiApiKey,
+          model: settings.ollamaModel,
+          systemPrompt,
+          userPrompt,
+          timeoutMs: 180_000,
+        });
+      }
 
       if (modelOutput && settings.sharedDesignsPath) {
         try {
