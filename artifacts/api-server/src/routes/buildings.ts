@@ -640,7 +640,7 @@ CODING RULES:
   Then use ONLY the name slope_rad everywhere — never write roof_slope_angle_rad, slope_angle_rad, pitch_rad or any other variant.
 - Define ALL numeric variables at the top before using them.
 - Use ONLY these CadQuery operations: box(), cylinder(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate().
-- Do NOT use extrude(), revolve(), sweep(), shell(), workplaneFromObject(), copyWorkplane().
+- BANNED — never use: extrude(), revolve(), sweep(), shell(), workplaneFromObject(), copyWorkplane(), filterByZ(), filterByX(), filterByY(), faces(), edges(), wires(), vertices(), rect(), circle(), polygon(), offset2D(), cutBlind(), cutThruAll(), pad(), pocket().
 - Second to last line: result = <the final assembled CadQuery object>
 - Last line: show_object(result)
 - Do NOT call exporters, save(), or any file-writing function.

@@ -30,10 +30,16 @@ export function sanitiseScript(raw: string): string {
     ""
   );
 
-  // 4b. Remove deprecated CadQuery methods that don't exist in current versions
-  //     workplaneFromObject — removed; copyWorkplane — removed
+  // 4b. Remove deprecated / non-existent CadQuery methods
   code = code.replace(/\.workplaneFromObject\s*\([^)]*\)/g, "");
   code = code.replace(/\.copyWorkplane\s*\([^)]*\)/g, "");
+  code = code.replace(/\.filterByZ\s*\([^)]*\)/g, "");
+  code = code.replace(/\.filterByX\s*\([^)]*\)/g, "");
+  code = code.replace(/\.filterByY\s*\([^)]*\)/g, "");
+  code = code.replace(/\.shell\s*\([^)]*\)/g, "");
+  code = code.replace(/\.extrude\s*\([^)]*\)/g, "");
+  code = code.replace(/\.revolve\s*\([^)]*\)/g, "");
+  code = code.replace(/\.sweep\s*\([^)]*\)/g, "");
 
   // 4c. Normalise slope-angle radian variable names.
   //     The AI often defines roof_slope_angle_rad, slope_angle_rad, pitch_rad etc.
