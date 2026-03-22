@@ -52,6 +52,7 @@ Rules:
 - Use ONLY: box(), cylinder(), sphere(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate().
 - Use box() for ALL walls, floor, roof, and slab shapes. Do NOT use extrude(), revolve(), sweep(), or shell() — these require pending wires and will fail.
 - Do NOT use workplaneFromObject(), copyWorkplane(), or any deprecated methods.
+- For roof slope in radians use ONLY the variable name slope_rad — never rename it.
 - Keep all parts of the script that the instruction does not change.
 - Second to last line: result = <the final assembled CadQuery object>
 - Last line: show_object(result)

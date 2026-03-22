@@ -35,6 +35,24 @@ export function sanitiseScript(raw: string): string {
   code = code.replace(/\.workplaneFromObject\s*\([^)]*\)/g, "");
   code = code.replace(/\.copyWorkplane\s*\([^)]*\)/g, "");
 
+  // 4c. Normalise slope-angle radian variable names.
+  //     The AI often defines roof_slope_angle_rad, slope_angle_rad, pitch_rad etc.
+  //     Find the first definition and normalise ALL variants to that one name.
+  const slopeRadDef = code.match(/\b([A-Za-z_]\w*slope\w*rad\w*|[A-Za-z_]\w*pitch\w*rad\w*|[A-Za-z_]\w*angle\w*rad\w*)\s*=/);
+  if (slopeRadDef) {
+    const canonicalName = slopeRadDef[1];
+    const variants = [
+      "slope_angle_rad", "roof_slope_angle_rad", "slope_rad",
+      "pitch_rad", "roof_pitch_rad", "angle_rad", "roof_angle_rad",
+      "tilt_rad", "roof_tilt_rad",
+    ];
+    for (const v of variants) {
+      if (v !== canonicalName) {
+        code = code.replace(new RegExp(`\\b${v}\\b`, "g"), canonicalName);
+      }
+    }
+  }
+
   // 5. Strip any existing cq_server import (we'll prepend a clean one)
   code = code.replace(/^.*cq_server.*$/gm, "");
 

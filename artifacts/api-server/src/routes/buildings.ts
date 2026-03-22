@@ -636,6 +636,8 @@ CODING RULES:
 - Line 2 MUST be: from cq_server.ui import ui, show_object
 - NO other import statements — do NOT import json, math, os, sys, numpy or any other module.
 - Use Python arithmetic directly for any maths (e.g. 2495 / 2 not math.floor(...)).
+- For the roof slope in radians ALWAYS write exactly: slope_rad = slope_angle_deg / 180.0 * 3.14159
+  Then use ONLY the name slope_rad everywhere — never write roof_slope_angle_rad, slope_angle_rad, pitch_rad or any other variant.
 - Define ALL numeric variables at the top before using them.
 - Use ONLY these CadQuery operations: box(), cylinder(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate().
 - Do NOT use extrude(), revolve(), sweep(), shell(), workplaneFromObject(), copyWorkplane().
