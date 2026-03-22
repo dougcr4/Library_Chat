@@ -223,6 +223,14 @@ export function useBuildingsCatalogue() {
   });
 }
 
+async function safeJson(res: Response, fallbackMsg: string) {
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('⚠️ Could not reach the local API server — make sure it is running on port 8080.');
+  }
+}
+
 export function useGenerateBuilding() {
   return useMutation({
     mutationFn: async (data: { designId: string | null, sizeId: string | null, sipThicknessId: string | null, fitoutSelections: FitoutSelection[], additionalNotes: string }) => {
@@ -231,7 +239,7 @@ export function useGenerateBuilding() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-      const result = await res.json();
+      const result = await safeJson(res, 'Failed to generate building model');
       if (!res.ok) throw new Error(result.error || 'Failed to generate building model');
       return result;
     }
@@ -246,7 +254,7 @@ export function useFixDesign() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: error ?? '' })
       });
-      const result = await res.json();
+      const result = await safeJson(res, 'Failed to fix design');
       if (!res.ok) throw new Error(result.error || 'Failed to fix design');
       return result;
     }
@@ -261,7 +269,7 @@ export function useRefineDesign() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ instruction })
       });
-      const result = await res.json();
+      const result = await safeJson(res, 'Failed to refine design');
       if (!res.ok) throw new Error(result.error || 'Failed to refine design');
       return result;
     }
@@ -272,9 +280,13 @@ export function useDesignStatus() {
   return useQuery({
     queryKey: ['design-status'],
     queryFn: async () => {
-      const res = await fetch('/api/design-status');
-      const result = await res.json();
-      return result as { exists: boolean };
+      try {
+        const res = await fetch('/api/design-status');
+        const result = await res.json();
+        return result as { exists: boolean };
+      } catch {
+        return { exists: false };
+      }
     },
     staleTime: Infinity,
   });
