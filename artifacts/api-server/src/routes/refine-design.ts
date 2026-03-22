@@ -45,14 +45,17 @@ router.post("/refine-design", async (req, res) => {
 
     const systemPrompt = `You are a CadQuery 3D modelling expert. You will be given an existing CadQuery Python script and an instruction to modify it.
 Apply the modification precisely and return the complete updated script.
-Rules:
+
+RULES (violations will crash the viewer):
 - Line 1: import cadquery as cq
 - Line 2: from cq_server.ui import ui, show_object
 - Define ALL variables before using them.
 - Use ONLY: box(), cylinder(), sphere(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate().
 - Use box() for ALL walls, floor, roof, and slab shapes.
-- BANNED — never use: extrude(), revolve(), sweep(), shell(), workplaneFromObject(), copyWorkplane(), filterByZ(), filterByX(), filterByY(), faces(), edges(), wires(), rect(), circle(), pad(), pocket(), cutBlind().
+- BANNED METHODS — never use: extrude(), revolve(), sweep(), shell(), workplaneFromObject(), copyWorkplane(), filterByZ(), filterByX(), filterByY(), faces(), edges(), wires(), rect(), circle(), pad(), pocket(), cutBlind(), BoundingBox().
 - For roof slope in radians use ONLY the variable name slope_rad — never rename it.
+- BANNED ATTRIBUTES — CadQuery Workplane objects have NO .X, .Y, .Z, .size, .height, .width, .depth attributes. NEVER access these. To change a dimension, edit the NUMBER inside the relevant box() or translate() call directly.
+- To increase wall heights by N mm: add N to the third argument of each wall's box() call AND adjust the Z value in each wall's translate() call by N/2.
 - Keep all parts of the script that the instruction does not change.
 - Second to last line: result = <the final assembled CadQuery object>
 - Last line: show_object(result)

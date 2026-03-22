@@ -41,6 +41,21 @@ export function sanitiseScript(raw: string): string {
   code = code.replace(/\.revolve\s*\([^)]*\)/g, "");
   code = code.replace(/\.sweep\s*\([^)]*\)/g, "");
 
+  // 4b-2. Strip invalid CadQuery attribute reads: obj.X, obj.Y, obj.Z
+  //        CadQuery Workplane objects have NO .X/.Y/.Z properties.
+  //        The LLM sometimes does: height = obj.Z + 300  — this crashes.
+  //        Strategy: replace every line that reads a bare .X/.Y/.Z rvalue with
+  //        a comment so the script stays syntactically valid and the user can
+  //        refine again with a corrected instruction.
+  code = code.replace(
+    /^([^\n#]*)(\b\w+\.(X|Y|Z)\b)(.*?)$/gm,
+    (_match, pre, ref, _axis, post) => {
+      // If it's inside a string literal, leave it alone
+      if ((pre + ref + post).match(/(['"]).*\b[XYZ]\b.*\1/)) return _match;
+      return `# SANITISED (no ${ref} attr in CadQuery): ${pre}${ref}${post}`;
+    }
+  );
+
   // 4c-pre. Fix common LLM typos in CadQuery API names.
   // Catch ALL variants: Workplanen, WorkplaneIn, Workplanes, WorkplaneAt, workplane, etc.
   // \w+ after "Workplane" = one or more extra word chars (won't touch the correct "Workplane(")
