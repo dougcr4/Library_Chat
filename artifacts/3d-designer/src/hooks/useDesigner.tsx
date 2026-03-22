@@ -286,6 +286,54 @@ export function useRefineDesign() {
   });
 }
 
+export function useSipQuantities(designId: string | null, sizeId: string | null, sipThicknessId: string | null) {
+  return useQuery({
+    queryKey: ['sip-quantities', designId, sizeId, sipThicknessId],
+    enabled: !!designId && !!sizeId && !!sipThicknessId,
+    staleTime: Infinity,
+    queryFn: async () => {
+      const res = await safeFetch('/api/sip-quantities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ designId, sizeId, sipThicknessId }),
+      });
+      const result = await safeJson(res, 'Failed to fetch SIP quantities');
+      if (!res.ok) throw new Error(result.error || 'Failed to fetch SIP quantities');
+      return result as SipQuantitiesResult;
+    },
+  });
+}
+
+export interface SipPanelCut {
+  position: number; cutWidthMm: number; cutHeightMm: number;
+  stockWidthMm: number; stockLengthMm: number;
+  wasteWidthMm: number; wasteHeightMm: number;
+  netAreaM2: number; grossAreaM2: number; isRemnant: boolean;
+}
+export interface SipFaceSchedule {
+  face: string; widthMm: number; heightMm: number;
+  stockLengthMm: number; totalPanels: number; fullPanels: number; remnantPanels: number;
+  grossAreaM2: number; openingAreaM2: number; netAreaM2: number;
+  panels: SipPanelCut[];
+}
+export interface SipQuantitiesResult {
+  buildingRef: string; sipSpec: string; wallThicknessMm: number;
+  outerW: number; outerL: number; frontH: number; backH: number;
+  openings: { name: string; widthMm: number; heightMm: number; areaM2: number }[];
+  faces: SipFaceSchedule[];
+  splines: {
+    panelJoints: {
+      joints: { face: string; joints: number; lengthMm: number; totalMm: number }[];
+      roofJoints: { face: string; joints: number; lengthMm: number; totalMm: number };
+      totalLinearMm: number;
+    };
+    solePlate:     { description: string; totalLinearMm: number };
+    headPlate:     { description: string; totalLinearMm: number };
+    cornerSplines: { description: string; totalLinearMm: number };
+  };
+  totals: { totalPanels: number; grossAreaM2: number; openingAreaM2: number; netAreaM2: number; weightKg: number };
+}
+
 export function useDesignStatus() {
   return useQuery({
     queryKey: ['design-status'],

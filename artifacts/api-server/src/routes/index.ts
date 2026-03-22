@@ -8,6 +8,7 @@ import adminRouter from "./admin";
 import fixDesignRouter from "./fix-design";
 import refineDesignRouter from "./refine-design";
 import designStatusRouter from "./design-status";
+import sipQuantitiesRouter from "./sip-quantities";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(adminRouter);
 router.use(fixDesignRouter);
 router.use(refineDesignRouter);
 router.use(designStatusRouter);
+router.use(sipQuantitiesRouter);
 
 export default router;
