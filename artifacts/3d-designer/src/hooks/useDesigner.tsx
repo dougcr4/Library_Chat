@@ -224,17 +224,27 @@ export function useBuildingsCatalogue() {
 }
 
 async function safeJson(res: Response, fallbackMsg: string) {
+  const text = await res.text().catch(() => '(no body)');
   try {
-    return await res.json();
+    return JSON.parse(text);
   } catch {
-    throw new Error('⚠️ Could not reach the local API server — make sure it is running on port 8080.');
+    const preview = text.slice(0, 200).replace(/\s+/g, ' ');
+    throw new Error(`⚠️ API returned non-JSON (HTTP ${res.status}): ${preview}`);
+  }
+}
+
+async function safeFetch(url: string, options: RequestInit) {
+  try {
+    return await fetch(url, options);
+  } catch (err: any) {
+    throw new Error(`⚠️ Network error reaching ${url} — is the API server running on port 8080? (${err?.message ?? err})`);
   }
 }
 
 export function useGenerateBuilding() {
   return useMutation({
     mutationFn: async (data: { designId: string | null, sizeId: string | null, sipThicknessId: string | null, fitoutSelections: FitoutSelection[], additionalNotes: string }) => {
-      const res = await fetch('/api/buildings/generate', {
+      const res = await safeFetch('/api/buildings/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -249,7 +259,7 @@ export function useGenerateBuilding() {
 export function useFixDesign() {
   return useMutation({
     mutationFn: async (error?: string) => {
-      const res = await fetch('/api/fix-design', {
+      const res = await safeFetch('/api/fix-design', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: error ?? '' })
@@ -264,7 +274,7 @@ export function useFixDesign() {
 export function useRefineDesign() {
   return useMutation({
     mutationFn: async (instruction: string) => {
-      const res = await fetch('/api/refine-design', {
+      const res = await safeFetch('/api/refine-design', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ instruction })
