@@ -644,7 +644,25 @@ router.post("/buildings/generate", async (req, res) => {
     const dkCy = -Math.round(outerL / 2 + deckW / 2);
     const dkCz = Math.round(floorT / 2);
 
-    // ── Canonical base script (no AI positioning required) ─────────────────
+    // ── Standard window cuts + base script (all pre-computed, no LLM needed) ─
+    // Side windows: box cut through wall thickness, 1350mm wide × 1400mm tall
+    // Sill at 900mm above floor slab top → window centre Z = floorT + 900 + 700
+    const winW   = 1350;   // window opening width  (along wall face)
+    const winH   = 1400;   // window opening height
+    const winSill = 900;   // height of sill above floor slab top
+    const winCz  = Math.round(floorT + winSill + winH / 2);
+    const winCutD = wallT + 40;  // cut depth: slightly wider than wall for clean boolean
+
+    const lhsWindowLines = design?.lhsWindowM2 ? [
+      `lhs_win_cut  = cq.Workplane("XY").box(${winCutD}, ${winW}, ${winH}).translate((${-swCx}, 0, ${winCz}))`,
+      `left_wall    = left_wall.cut(lhs_win_cut)`,
+    ] : [];
+
+    const rhsWindowLines = design?.rhsWindowM2 ? [
+      `rhs_win_cut  = cq.Workplane("XY").box(${winCutD}, ${winW}, ${winH}).translate((${swCx}, 0, ${winCz}))`,
+      `right_wall   = right_wall.cut(rhs_win_cut)`,
+    ] : [];
+
     const baseScript = [
       `import cadquery as cq`,
       `from cq_server.ui import ui, show_object`,
@@ -654,6 +672,8 @@ router.post("/buildings/generate", async (req, res) => {
       `back_wall    = cq.Workplane("XY").box(${outerW}, ${wallT}, ${backH}).translate((0, ${bwCy}, ${bwCz}))`,
       `left_wall    = cq.Workplane("XY").box(${wallT}, ${innerL}, ${backH}).translate((${-swCx}, ${swCy}, ${swCz}))`,
       `right_wall   = cq.Workplane("XY").box(${wallT}, ${innerL}, ${backH}).translate((${swCx}, ${swCy}, ${swCz}))`,
+      ...lhsWindowLines,
+      ...rhsWindowLines,
       `roof_box     = cq.Workplane("XY").box(${roofBoxW}, ${roofBoxL}, ${roofT})`,
       `roof_panel   = roof_box.rotate((0, 0, 0), (1, 0, 0), ${(-slopeAngleDeg).toFixed(4)}).translate((0, ${roofTy}, ${roofTz}))`,
       `decking_slab = cq.Workplane("XY").box(${outerW}, ${deckW}, ${floorT}).translate((0, ${dkCy}, ${dkCz}))`,
@@ -661,8 +681,8 @@ router.post("/buildings/generate", async (req, res) => {
       `show_object(result)`,
     ].join("\n");
 
-    const hasFitout = body.fitoutSelections.length > 0 || body.additionalNotes ||
-                      design?.lhsWindowM2 || design?.rhsWindowM2;
+    // Only call the LLM for truly custom fit-out items (not standard windows — those are pre-computed above)
+    const hasFitout = body.fitoutSelections.length > 0 || !!body.additionalNotes;
 
     const systemPrompt = `You are a CadQuery 3D modelling expert.
 You will receive a working CadQuery script for a SIP garden building.
