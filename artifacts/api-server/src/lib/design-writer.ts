@@ -41,10 +41,11 @@ export function sanitiseScript(raw: string): string {
   code = code.replace(/\.revolve\s*\([^)]*\)/g, "");
   code = code.replace(/\.sweep\s*\([^)]*\)/g, "");
 
-  // 4c-pre. Fix common LLM typos in CadQuery API names
-  code = code.replace(/cq\.Workplane\s*n\s*\(/g, "cq.Workplane(");  // Workplanen → Workplane
-  code = code.replace(/cq\.Workplanes\s*\(/g, "cq.Workplane(");      // Workplanes → Workplane
-  code = code.replace(/\bcq\.workplane\s*\(/g, "cq.Workplane(");     // lowercase → correct case
+  // 4c-pre. Fix common LLM typos in CadQuery API names.
+  // Catch ALL variants: Workplanen, WorkplaneIn, Workplanes, WorkplaneAt, workplane, etc.
+  // \w+ after "Workplane" = one or more extra word chars (won't touch the correct "Workplane(")
+  code = code.replace(/\bcq\.[Ww]orkplane\w+\s*\(/g, "cq.Workplane(");  // WorkplaneIn/n/s/At/… → Workplane(
+  code = code.replace(/\bcq\.workplane\s*\(/g,         "cq.Workplane(");  // pure lowercase variant
 
   // 4c. Normalise slope-angle radian variable names.
   //     The AI often defines roof_slope_angle_rad, slope_angle_rad, pitch_rad etc.
