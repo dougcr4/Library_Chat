@@ -681,8 +681,10 @@ router.post("/buildings/generate", async (req, res) => {
       `show_object(result)`,
     ].join("\n");
 
-    // Only call the LLM for truly custom fit-out items (not standard windows — those are pre-computed above)
-    const hasFitout = body.fitoutSelections.length > 0 || !!body.additionalNotes;
+    // Only call the LLM when there are explicit fit-out product selections.
+    // additionalNotes alone is not enough — the LLM cannot reliably modify the
+    // pre-computed shell from a freeform text description.
+    const hasFitout = body.fitoutSelections.length > 0;
 
     const systemPrompt = `You are a CadQuery 3D modelling expert.
 You will receive a working CadQuery script for a SIP garden building.
