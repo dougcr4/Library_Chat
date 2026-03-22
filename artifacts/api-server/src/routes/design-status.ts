@@ -6,7 +6,7 @@ import { settingsTable } from "@workspace/db/schema";
 
 const router: IRouter = Router();
 
-router.get("/api/design-status", async (_req, res) => {
+router.get("/design-status", async (_req, res) => {
   try {
     const settings = (await db.select().from(settingsTable))[0];
     if (!settings?.sharedDesignsPath) {

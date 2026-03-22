@@ -8,7 +8,7 @@ import { settingsTable } from "@workspace/db/schema";
 
 const router: IRouter = Router();
 
-router.post("/api/refine-design", async (req, res) => {
+router.post("/refine-design", async (req, res) => {
   try {
     const settings = (await db.select().from(settingsTable))[0];
     if (!settings) {
