@@ -632,15 +632,17 @@ MONO-PITCH ROOF METHOD (box + rotate):
 3. Translate it so the front edge sits at (0, -overhang, roof_z_front).
 
 CODING RULES:
-- Line 1: import cadquery as cq
-- Line 2: from cq_server.ui import ui, show_object
-- Define ALL variables at the top before using them.
-- Use ONLY: box(), cylinder(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate().
+- Line 1 MUST be: import cadquery as cq
+- Line 2 MUST be: from cq_server.ui import ui, show_object
+- NO other import statements — do NOT import json, math, os, sys, numpy or any other module.
+- Use Python arithmetic directly for any maths (e.g. 2495 / 2 not math.floor(...)).
+- Define ALL numeric variables at the top before using them.
+- Use ONLY these CadQuery operations: box(), cylinder(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate().
 - Do NOT use extrude(), revolve(), sweep(), shell(), workplaneFromObject(), copyWorkplane().
 - Second to last line: result = <the final assembled CadQuery object>
 - Last line: show_object(result)
 - Do NOT call exporters, save(), or any file-writing function.
-- Return ONLY the raw Python script — no explanations, no markdown fences.`;
+- Return ONLY the raw Python script — no markdown fences, no comments, no explanations.`;
 
     const userPrompt = [
       `Shell: ${design?.name ?? body.designId} (${design?.code ?? ""}) — ${design?.description ?? ""}`,

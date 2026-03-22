@@ -43,16 +43,18 @@ router.post("/api/fix-design", async (req, res) => {
     const systemPrompt = `You are a CadQuery expert. You will be given a Python CadQuery script that has an error.
 Fix the script so it runs without errors.
 Rules:
-- Line 1: import cadquery as cq
-- Line 2: from cq_server.ui import ui, show_object
+- Line 1 MUST be: import cadquery as cq
+- Line 2 MUST be: from cq_server.ui import ui, show_object
+- NO other import statements — do NOT import json, math, os, sys, numpy or any other module.
+- Use Python arithmetic directly for any maths (e.g. 2495 / 2 not math.floor(...)).
 - Define ALL variables before using them.
-- Use ONLY: box(), cylinder(), sphere(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate().
+- Use ONLY: box(), cylinder(), union(), cut(), intersect(), fillet(), chamfer(), translate(), rotate().
 - Use box() for ALL walls, floor, roof, and slab shapes. Do NOT use extrude(), revolve(), sweep(), or shell() — these require pending wires and will fail.
 - Do NOT use workplaneFromObject(), copyWorkplane(), or any deprecated methods.
 - Second to last line: result = <the final CadQuery object>
 - Last line: show_object(result)
 - Do NOT call exporters, save(), or any file-writing function.
-- Return ONLY the corrected Python script — no explanations, no markdown fences.`;
+- Return ONLY the corrected Python script — no markdown fences, no comments, no explanations.`;
 
     const userPrompt = errorMsg
       ? `This script produced the error: "${errorMsg}"\n\nFix it:\n\n${currentScript}`
