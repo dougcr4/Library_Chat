@@ -698,8 +698,11 @@ RULES (violations will break the viewer):
 
     try {
       if (!hasFitout) {
-        // No fit-out: skip the LLM entirely and use the pre-computed script
+        // No fit-out: use the pre-computed script directly — no LLM, no sanitiser
         modelOutput = baseScript;
+        if (settings.sharedDesignsPath) {
+          await writeDesignFiles(settings.sharedDesignsPath, modelOutput, { skipSanitise: true });
+        }
       } else {
         modelOutput = await callLlm({
           ollamaUrl: settings.ollamaUrl,
@@ -710,13 +713,12 @@ RULES (violations will break the viewer):
           userPrompt,
           timeoutMs: 180_000,
         });
-      }
-
-      if (modelOutput && settings.sharedDesignsPath) {
-        try {
-          await writeDesignFiles(settings.sharedDesignsPath, modelOutput);
-        } catch (writeErr) {
-          console.error("Failed to write design files:", writeErr);
+        if (modelOutput && settings.sharedDesignsPath) {
+          try {
+            await writeDesignFiles(settings.sharedDesignsPath, modelOutput);
+          } catch (writeErr) {
+            console.error("Failed to write design files:", writeErr);
+          }
         }
       }
     } catch (err) {

@@ -41,6 +41,11 @@ export function sanitiseScript(raw: string): string {
   code = code.replace(/\.revolve\s*\([^)]*\)/g, "");
   code = code.replace(/\.sweep\s*\([^)]*\)/g, "");
 
+  // 4c-pre. Fix common LLM typos in CadQuery API names
+  code = code.replace(/cq\.Workplane\s*n\s*\(/g, "cq.Workplane(");  // Workplanen → Workplane
+  code = code.replace(/cq\.Workplanes\s*\(/g, "cq.Workplane(");      // Workplanes → Workplane
+  code = code.replace(/\bcq\.workplane\s*\(/g, "cq.Workplane(");     // lowercase → correct case
+
   // 4c. Normalise slope-angle radian variable names.
   //     The AI often defines roof_slope_angle_rad, slope_angle_rad, pitch_rad etc.
   //     Find the first definition and normalise ALL variants to that one name.
@@ -174,9 +179,10 @@ function buildNotebook(designPath: string): string {
 
 export async function writeDesignFiles(
   sharedDesignsPath: string,
-  rawModelOutput: string
+  rawModelOutput: string,
+  options: { skipSanitise?: boolean } = {}
 ): Promise<void> {
-  const code = sanitiseScript(rawModelOutput);
+  const code = options.skipSanitise ? rawModelOutput : sanitiseScript(rawModelOutput);
 
   // Write the sanitised Python script (cq-server compatible)
   const pyPath = join(sharedDesignsPath, "latest_design.py");
