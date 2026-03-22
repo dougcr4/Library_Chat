@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Save, Send, Bot, User, ExternalLink, RotateCw, Loader2, AlertTriangle, CheckCircle2, Circle, Wand2, Pencil } from "lucide-react";
-import { useDesignerContext, useStyles, useItems, useGenerateModel, useBuildingsCatalogue, useGenerateBuilding, useSettings, useFixDesign, useRefineDesign } from "@/hooks/useDesigner";
+import { useDesignerContext, useStyles, useItems, useGenerateModel, useBuildingsCatalogue, useGenerateBuilding, useSettings, useFixDesign, useRefineDesign, useDesignStatus } from "@/hooks/useDesigner";
 import SaveProjectDialog from "./SaveProjectDialog";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -61,6 +61,7 @@ export default function ChatPanel() {
   const generateBuilding = useGenerateBuilding();
   const fixDesign = useFixDesign();
   const refineDesign = useRefineDesign();
+  const designStatus = useDesignStatus();
   const jupyterLabUrl = (settingsData?.jupyterLabUrl || "http://localhost:8888").replace(/\/$/, "");
   const jupyterLabWorkDir = (settingsData?.jupyterLabWorkDir || "").replace(/^\/|\/$/g, "");
   const notebookUrl = jupyterLabWorkDir
@@ -100,6 +101,16 @@ export default function ChatPanel() {
       scrollContainer.scrollTop = scrollContainer.scrollHeight;
     }
   }, [messages]);
+
+  // Auto-restore refine mode if a design already exists on disk
+  useEffect(() => {
+    if (designStatus.data?.exists && !scriptReady) {
+      setScriptReady(true);
+      if (!viewerUrl && cadqueryBaseUrl) {
+        setViewerUrl(`${cadqueryBaseUrl}?module=latest_design&t=${Date.now()}`);
+      }
+    }
+  }, [designStatus.data]);
 
   const handleSend = () => {
     if (isPending) return;

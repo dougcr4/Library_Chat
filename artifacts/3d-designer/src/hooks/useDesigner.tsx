@@ -267,3 +267,15 @@ export function useRefineDesign() {
     }
   });
 }
+
+export function useDesignStatus() {
+  return useQuery({
+    queryKey: ['design-status'],
+    queryFn: async () => {
+      const res = await fetch('/api/design-status');
+      const result = await res.json();
+      return result as { exists: boolean };
+    },
+    staleTime: Infinity,
+  });
+}
