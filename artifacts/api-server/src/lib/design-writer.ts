@@ -56,11 +56,12 @@ export function sanitiseScript(raw: string): string {
     }
   );
 
-  // 4c-pre. Fix common LLM typos in CadQuery API names.
-  // Catch ALL variants: Workplanen, WorkplaneIn, Workplanes, WorkplaneAt, workplane, etc.
-  // \w+ after "Workplane" = one or more extra word chars (won't touch the correct "Workplane(")
-  code = code.replace(/\bcq\.[Ww]orkplane\w+\s*\(/g, "cq.Workplane(");  // WorkplaneIn/n/s/At/… → Workplane(
-  code = code.replace(/\bcq\.workplane\s*\(/g,         "cq.Workplane(");  // pure lowercase variant
+  // 4c-pre. Fix ALL LLM mis-spellings of cq.Workplane(:
+  //   - Truncated: Workplan( (missing 'e') → [Ee]? makes 'e' optional
+  //   - Suffixed:  WorkplaneIn(, WorkplaneAt(, Workplanen( → \w* catches any suffix
+  //   - Lowercase: cq.workplane( → [Ww] handles case
+  //   - Correct form cq.Workplane( passes through idempotently (\w* = 0 extra chars)
+  code = code.replace(/\bcq\.[Ww]orkplan[Ee]?\w*\s*\(/g, "cq.Workplane(");
 
   // 4c. Normalise slope-angle radian variable names.
   //     The AI often defines roof_slope_angle_rad, slope_angle_rad, pitch_rad etc.
