@@ -47,6 +47,7 @@ export default function ChatPanel() {
     selectedItemId, setSelectedItemId, 
     selectedDesignId, setSelectedDesignId,
     selectedSizeId, setSelectedSizeId,
+    selectedSipThicknessId,
     fitoutSelections,
     messages, setMessages,
     currentPrompt, setCurrentPrompt,
@@ -184,6 +185,7 @@ export default function ChatPanel() {
       generateBuilding.mutate({
         designId: selectedDesignId,
         sizeId: selectedSizeId,
+        sipThicknessId: selectedSipThicknessId,
         fitoutSelections,
         additionalNotes: promptToSend
       }, { onSuccess: handleSuccess, onError: handleError });

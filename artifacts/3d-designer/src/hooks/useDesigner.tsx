@@ -26,7 +26,7 @@ export interface FitoutSelection {
 export interface BuildingCatalogue {
   designs: { id: string; code: string; name: string; description: string }[];
   sizes: { id: string; name: string; label: string; approxWidth: number | null; approxLength: number | null; planningFlag: boolean; buildingRegsFlag: boolean }[];
-  sipThicknesses: { id: string; totalMm: number; osbMm: number; epsMm: number; label: string }[];
+  sipThicknesses: { id: string; totalMm: number; osbMm: number; epsMm: number; uValue?: number; weightKg?: number; label: string }[];
   fitoutSections: FitoutSection[];
 }
 export interface FitoutSection {

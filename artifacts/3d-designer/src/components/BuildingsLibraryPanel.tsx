@@ -277,6 +277,7 @@ export default function BuildingsLibraryPanel() {
   const {
     selectedDesignId, setSelectedDesignId,
     selectedSizeId, setSelectedSizeId,
+    selectedSipThicknessId, setSelectedSipThicknessId,
     fitoutSelections, setFitoutSelections,
   } = useDesignerContext();
 
@@ -338,11 +339,17 @@ export default function BuildingsLibraryPanel() {
   const handleDesignChange = (id: string) => {
     setSelectedDesignId(id);
     setSelectedSizeId(null);
+    setSelectedSipThicknessId(null);
     setFitoutSelections([]);
   };
 
   const handleSizeChange = (id: string) => {
     setSelectedSizeId(id);
+    // Auto-select 144mm SIP if nothing already chosen
+    if (!selectedSipThicknessId) {
+      const defaultSip = catalogue?.sipThicknesses.find(s => s.totalMm === 144);
+      if (defaultSip) setSelectedSipThicknessId(defaultSip.id);
+    }
     setFitoutSelections([]);
   };
 
@@ -373,7 +380,25 @@ export default function BuildingsLibraryPanel() {
           />
         </div>
 
-        {/* Design summary headline — appears once shell + size are chosen */}
+        {/* Step 3: SIP Thickness */}
+        {selectedSizeId && (
+          <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+            <DropdownSelector
+              label="3. SIP Panel Thickness"
+              value={selectedSipThicknessId}
+              placeholder="Select SIP thickness…"
+              options={(catalogue.sipThicknesses ?? []).map(s => ({
+                id: s.id,
+                label: s.label,
+                sub: `U-value: ${s.uValue ?? "—"} W/m²K  ·  OSB ${s.osbMm}mm + EPS ${s.epsMm}mm`,
+              }))}
+              onSelect={setSelectedSipThicknessId}
+              onClear={() => setSelectedSipThicknessId(null)}
+            />
+          </div>
+        )}
+
+        {/* Design summary headline — appears once shell + size + SIP are chosen */}
         {selectedDesign && selectedSize && (
           <div className="animate-in fade-in duration-300 rounded-lg bg-primary/8 border border-primary/20 px-3 py-2">
             <p className="text-[10px] font-semibold text-primary/70 uppercase tracking-wider mb-0.5">Selected Design</p>
@@ -389,10 +414,10 @@ export default function BuildingsLibraryPanel() {
           </div>
         )}
 
-        {/* Step 3: Fit-out sections — inline buttons, no floating dropdowns */}
+        {/* Step 4: Fit-out sections — inline buttons, no floating dropdowns */}
         {selectedSizeId && (
           <div className="animate-in fade-in slide-in-from-top-2 duration-200 space-y-2">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">3. Fit-out Options</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">4. Fit-out Options</p>
 
             {catalogue.fitoutSections.map(section => {
               const sectionCount = fitoutSelections.filter(s => s.sectionId === section.id).length;
