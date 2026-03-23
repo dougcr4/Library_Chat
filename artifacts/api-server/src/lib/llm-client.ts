@@ -87,8 +87,8 @@ export async function callLlm(opts: LlmCallOptions): Promise<string> {
       signal,
     });
 
-    if (res.status === 401) {
-      console.warn("Open-WebUI returned 401 — API key invalid or expired. Falling back to Ollama.");
+    if (res.status === 401 || res.status === 403) {
+      console.warn(`Open-WebUI returned ${res.status} — API key invalid, expired, or not permitted. Falling back to Ollama.`);
       return callOllama(ollamaUrl, model, systemPrompt, userPrompt, signal);
     }
 

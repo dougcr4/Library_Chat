@@ -128,7 +128,7 @@ export default function ChatPanel() {
 
   const handleSend = () => {
     if (isPending) return;
-    if ((mode === 'furniture' || isRefineMode) && !currentPrompt.trim()) return;
+    if (mode === 'furniture' && !currentPrompt.trim()) return;
 
     const userMessageContent = currentPrompt.trim() || (mode === 'building'
       ? `Generate 3D model — ${selectedDesign?.name ?? ""}${selectedSize ? ` · ${selectedSize.name}` : ""}`
@@ -176,8 +176,8 @@ export default function ChatPanel() {
       });
     };
 
-    // Refinement mode — modify the existing design
-    if (isRefineMode) {
+    // Refinement mode — modify the existing design (only when an instruction is given)
+    if (isRefineMode && promptToSend) {
       setMessages(prev => [...prev, userMessage, loadingMessage]);
       refineDesign.mutate(promptToSend, { onSuccess: handleSuccess, onError: handleError });
       return;
@@ -202,13 +202,6 @@ export default function ChatPanel() {
         fitoutSelections,
         additionalNotes: promptToSend
       }, { onSuccess: handleSuccess, onError: handleError });
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      handleSend();
     }
   };
 
@@ -430,7 +423,6 @@ export default function ChatPanel() {
                   : "Any additional notes or bespoke requirements? (e.g. 'include a 2m wide veranda on the south-facing side')"}
               value={currentPrompt}
               onChange={(e) => setCurrentPrompt(e.target.value)}
-              onKeyDown={handleKeyDown}
               rows={2}
             />
             <div className="pb-2 pr-2 shrink-0">
@@ -438,14 +430,11 @@ export default function ChatPanel() {
                 size="icon" 
                 className="rounded-xl w-12 h-12 shadow-sm transition-transform active:scale-95"
                 onClick={handleSend}
-                disabled={isPending || ((mode === 'furniture' || isRefineMode) && !currentPrompt.trim())}
+                disabled={isPending || (mode === 'furniture' && !currentPrompt.trim())}
               >
                 {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-0.5" />}
               </Button>
             </div>
-          </div>
-          <div className="text-center">
-            <span className="text-[11px] text-muted-foreground/70 font-medium">Press <kbd className="font-sans px-1.5 py-0.5 rounded-md bg-muted border border-border/50 text-foreground">Ctrl</kbd> + <kbd className="font-sans px-1.5 py-0.5 rounded-md bg-muted border border-border/50 text-foreground">Enter</kbd> to send</span>
           </div>
         </div>
       </div>
