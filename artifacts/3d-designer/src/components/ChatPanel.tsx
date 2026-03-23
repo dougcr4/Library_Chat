@@ -73,9 +73,21 @@ export default function ChatPanel() {
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [scriptReady, setScriptReady] = useState(false);
   const stageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const justResetRef = useRef(false); // suppresses auto-restore for one polling cycle after New Design
 
   const isRefineMode = scriptReady;
   const isPending = generateModel.isPending || generateBuilding.isPending || refineDesign.isPending;
+
+  // Wrap resetDesign so it also clears local refine-mode state
+  const handleNewDesign = () => {
+    justResetRef.current = true;
+    setScriptReady(false);
+    setViewerUrl(null);
+    setMessages([]);
+    resetDesign();
+    // Allow auto-restore after 5s (in case user navigates away and back)
+    setTimeout(() => { justResetRef.current = false; }, 5000);
+  };
 
   useEffect(() => {
     if (isPending) {
@@ -103,9 +115,10 @@ export default function ChatPanel() {
     }
   }, [messages]);
 
-  // Auto-restore refine mode if a design already exists on disk
+  // Auto-restore refine mode if a design already exists on disk,
+  // but not within 5s of the user clicking New Design.
   useEffect(() => {
-    if (designStatus.data?.exists && !scriptReady) {
+    if (designStatus.data?.exists && !scriptReady && !justResetRef.current) {
       setScriptReady(true);
       if (!viewerUrl && cadqueryBaseUrl) {
         setViewerUrl(`${cadqueryBaseUrl}?module=latest_design&t=${Date.now()}`);
@@ -208,7 +221,7 @@ export default function ChatPanel() {
           {mode === 'furniture' ? 'Garden Furniture Designer' : 'Garden Buildings Designer'}
         </h2>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={resetDesign} className="gap-2">
+          <Button variant="outline" size="sm" onClick={handleNewDesign} className="gap-2">
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">New Design</span>
           </Button>
