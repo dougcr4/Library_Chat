@@ -49,6 +49,7 @@ export default defineConfig({
   },
   server: {
     port,
+    strictPort: true,   // fail clearly instead of silently hopping to 5174, 5175...
     host: "0.0.0.0",
     allowedHosts: true,
     // On Replit, /api routing is handled by the platform proxy.
