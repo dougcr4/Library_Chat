@@ -623,16 +623,16 @@ router.post("/buildings/generate", async (req, res) => {
     // back wall: full outer width, wallT deep, backH tall
     const bwCy =  Math.round((outerL - wallT) / 2);
     const bwCz =  Math.round(floorT + backH  / 2);
-    // side walls: wallT wide, innerL deep, backH tall
+    // side walls: wallT wide, innerL deep — extended to frontH then slope-cut
     const swCx =  Math.round((outerW - wallT) / 2);
     const swCy = 0;
-    const swCz =  Math.round(floorT + backH  / 2);
     // roof box (before rotation): width outerW+2*ovhS, length outerL+ovhF+ovhS, height roofT
     const roofBoxW = outerW + 2 * ovhS;
     const roofBoxL = outerL + ovhF + ovhS;
     // After rotation by -slopeAngleDeg around X, translate so front-bottom edge is at z=roofZFront, y=-(outerL/2+ovhF)
     // Front-bottom corner of unrotated box: (0, -roofBoxL/2, -roofT/2)
-    // After rotate by -slope (radians): y' = y*cos+z*sin, z' = -y*sin+z*cos
+    // CadQuery rotate convention: after rotate(angle), z' = y*sin(|angle|)*sign + z*cos(angle)
+    // Verified: after rotate(-slopeAngleDeg), z' = y*sin(sRad) + z*cos(sRad) [code formula below]
     const sRad = slopeAngleDeg * Math.PI / 180;
     const fbY = -(roofBoxL / 2);
     const fbZ = -(roofT / 2);
@@ -640,6 +640,20 @@ router.post("/buildings/generate", async (req, res) => {
     const fbZr = -fbY * Math.sin(-sRad) + fbZ * Math.cos(-sRad);
     const roofTy = Math.round(-(outerL / 2 + ovhF) - fbYr);
     const roofTz = Math.round(roofZFront - fbZr);
+    // ── Side-wall slope cut ──────────────────────────────────────────────────
+    // Side walls are made frontH tall, then a box rotated by +slopeAngleDeg cuts
+    // the diagonal so they taper from frontH at the front face to backH at the back.
+    // After rotate(+slopeAngleDeg): z' = -y*sin(sRad)+z*cos(sRad), y' = y*cos(sRad)+z*sin(sRad)
+    const swCutH = frontH + 200;              // tall enough to cut all excess
+    const swCutL = outerL + 400;              // covers full depth + margin
+    const swcFbY = -(swCutL / 2);            // front-bottom Y of cut box (pre-rotation)
+    const swcFbZ = -(swCutH / 2);            // front-bottom Z of cut box (pre-rotation)
+    const swcFbZr = -swcFbY * Math.sin(sRad) + swcFbZ * Math.cos(sRad);
+    const swcFbYr =  swcFbY * Math.cos(sRad) + swcFbZ * Math.sin(sRad);
+    // Translate so front-bottom lands at Y=-(outerL/2) [front wall outer face], Z=floorT+frontH
+    const swCutTy  = Math.round(-(outerL / 2) - swcFbYr);
+    const swCutTz  = Math.round((floorT + frontH) - swcFbZr);
+    const swFullCz = Math.round(floorT + frontH / 2);  // centre Z for frontH-tall side walls
     // decking: in front of front wall
     const dkCy = -Math.round(outerL / 2 + deckW / 2);
     const dkCz = Math.round(floorT / 2);
@@ -666,12 +680,15 @@ router.post("/buildings/generate", async (req, res) => {
     const baseScript = [
       `import cadquery as cq`,
       `from cq_server.ui import ui, show_object`,
-      `slope_rad = ${slopeAngleDeg.toFixed(4)} / 180.0 * 3.14159`,
       `floor_slab   = cq.Workplane("XY").box(${outerW}, ${outerL}, ${floorT}).translate((${flCx}, ${flCy}, ${flCz}))`,
       `front_wall   = cq.Workplane("XY").box(${outerW}, ${wallT}, ${frontH}).translate((0, ${fwCy}, ${fwCz}))`,
       `back_wall    = cq.Workplane("XY").box(${outerW}, ${wallT}, ${backH}).translate((0, ${bwCy}, ${bwCz}))`,
-      `left_wall    = cq.Workplane("XY").box(${wallT}, ${innerL}, ${backH}).translate((${-swCx}, ${swCy}, ${swCz}))`,
-      `right_wall   = cq.Workplane("XY").box(${wallT}, ${innerL}, ${backH}).translate((${swCx}, ${swCy}, ${swCz}))`,
+      `# Side walls: full frontH height then slope-cut to match roof pitch`,
+      `left_wall_f  = cq.Workplane("XY").box(${wallT}, ${innerL}, ${frontH}).translate((${-swCx}, ${swCy}, ${swFullCz}))`,
+      `right_wall_f = cq.Workplane("XY").box(${wallT}, ${innerL}, ${frontH}).translate((${swCx}, ${swCy}, ${swFullCz}))`,
+      `sw_cut       = cq.Workplane("XY").box(${outerW + 400}, ${swCutL}, ${swCutH}).rotate((0, 0, 0), (1, 0, 0), ${slopeAngleDeg.toFixed(4)}).translate((0, ${swCutTy}, ${swCutTz}))`,
+      `left_wall    = left_wall_f.cut(sw_cut)`,
+      `right_wall   = right_wall_f.cut(sw_cut)`,
       ...lhsWindowLines,
       ...rhsWindowLines,
       `roof_box     = cq.Workplane("XY").box(${roofBoxW}, ${roofBoxL}, ${roofT})`,
