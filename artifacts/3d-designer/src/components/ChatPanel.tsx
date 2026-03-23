@@ -166,9 +166,7 @@ export default function ChatPanel() {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = {
           role: 'system',
-          content: err.message.includes('Ollama')
-            ? "⚠️ Could not connect to local AI backend. Go to Settings to check your Ollama URL."
-            : `Error: ${err.message}`,
+          content: `Error: ${err.message}`,
           type: 'error',
           isGenerating: false,
         };
