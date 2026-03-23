@@ -1,7 +1,7 @@
 /**
  * Shared LLM client — supports two backends:
  *
- *  1. Ollama native  (no API key set)
+ *  1. Ollama native  (no API key set, or Open-WebUI returns 401)
  *     POST {ollamaUrl}/api/generate
  *     Payload: { model, system, prompt, stream: false }
  *     Response: { response: string }
@@ -10,6 +10,8 @@
  *     POST {openWebUiUrl}/api/chat/completions
  *     Payload: { model, messages, stream: false }
  *     Response: { choices[0].message.content: string }
+ *
+ * If Open-WebUI returns 401 the client automatically falls back to Ollama.
  */
 
 export interface LlmCallOptions {
@@ -20,6 +22,37 @@ export interface LlmCallOptions {
   systemPrompt: string;
   userPrompt: string;
   timeoutMs?: number;
+}
+
+async function callOllama(
+  ollamaUrl: string,
+  model: string,
+  systemPrompt: string,
+  userPrompt: string,
+  signal: AbortSignal,
+): Promise<string> {
+  const url = `${ollamaUrl.trim()}/api/generate`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model,
+      system: systemPrompt,
+      prompt: userPrompt,
+      stream: false,
+    }),
+    signal,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Ollama error ${res.status}: ${text}`);
+  }
+
+  const data = (await res.json()) as { response?: string };
+  const content = data.response ?? "";
+  if (!content) throw new Error("Ollama returned an empty response");
+  return content;
 }
 
 export async function callLlm(opts: LlmCallOptions): Promise<string> {
@@ -54,6 +87,11 @@ export async function callLlm(opts: LlmCallOptions): Promise<string> {
       signal,
     });
 
+    if (res.status === 401) {
+      console.warn("Open-WebUI returned 401 — API key invalid or expired. Falling back to Ollama.");
+      return callOllama(ollamaUrl, model, systemPrompt, userPrompt, signal);
+    }
+
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`Open-WebUI error ${res.status}: ${text}`);
@@ -67,27 +105,6 @@ export async function callLlm(opts: LlmCallOptions): Promise<string> {
     return content;
 
   } else {
-    const url = `${ollamaUrl.trim()}/api/generate`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model,
-        system: systemPrompt,
-        prompt: userPrompt,
-        stream: false,
-      }),
-      signal,
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Ollama error ${res.status}: ${text}`);
-    }
-
-    const data = (await res.json()) as { response?: string };
-    const content = data.response ?? "";
-    if (!content) throw new Error("Ollama returned an empty response");
-    return content;
+    return callOllama(ollamaUrl, model, systemPrompt, userPrompt, signal);
   }
 }
