@@ -10,6 +10,7 @@ export interface Settings {
   ollamaUrl: string;
   ollamaModel: string;
   openWebUiUrl: string;
+  openWebUiModel: string;
   cadqueryViewerUrl: string;
   jupyterLabUrl: string;
   sharedDesignsPath: string;

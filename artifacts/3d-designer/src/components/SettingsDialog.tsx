@@ -15,8 +15,9 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
   
   const [formData, setFormData] = useState({
     ollamaUrl: "http://localhost:11434",
-    ollamaModel: "joshuaokolo/C3Dv0:latest",
+    ollamaModel: "qwen2.5:14b",
     openWebUiUrl: "http://localhost:3001",
+    openWebUiModel: "joshuaokolo-cad-designer",
     openWebUiApiKey: "",
     cadqueryViewerUrl: "http://localhost:5000",
     jupyterLabUrl: "http://localhost:8888",
@@ -28,8 +29,9 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
     if (settings) {
       setFormData({
         ollamaUrl: settings.ollamaUrl || "http://localhost:11434",
-        ollamaModel: settings.ollamaModel || "joshuaokolo/C3Dv0:latest",
+        ollamaModel: settings.ollamaModel || "qwen2.5:14b",
         openWebUiUrl: settings.openWebUiUrl || "http://localhost:3001",
+        openWebUiModel: (settings as any).openWebUiModel || "joshuaokolo-cad-designer",
         openWebUiApiKey: settings.openWebUiApiKey || "",
         cadqueryViewerUrl: settings.cadqueryViewerUrl || "http://localhost:5000",
         jupyterLabUrl: settings.jupyterLabUrl || "http://localhost:8888",
@@ -62,6 +64,45 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
         ) : (
           <ScrollArea className="max-h-[60vh] pr-4">
             <div className="grid gap-4 py-4">
+
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Open-WebUI (AI via API key)</p>
+
+              <div className="grid gap-2">
+                <Label htmlFor="openWebUiUrl">Open-WebUI URL</Label>
+                <Input 
+                  id="openWebUiUrl" 
+                  value={formData.openWebUiUrl} 
+                  onChange={e => setFormData({...formData, openWebUiUrl: e.target.value})} 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="openWebUiModel">Open-WebUI Model Name</Label>
+                <Input 
+                  id="openWebUiModel"
+                  placeholder="joshuaokolo-cad-designer"
+                  value={formData.openWebUiModel} 
+                  onChange={e => setFormData({...formData, openWebUiModel: e.target.value})} 
+                />
+                <p className="text-xs text-muted-foreground">
+                  The pipeline or model name exactly as it appears in Open-WebUI (e.g. joshuaokolo-cad-designer).
+                </p>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="openWebUiApiKey">Open-WebUI API Key</Label>
+                <Input 
+                  id="openWebUiApiKey"
+                  type="password"
+                  placeholder="sk-… — leave blank to use Ollama directly instead"
+                  value={formData.openWebUiApiKey} 
+                  onChange={e => setFormData({...formData, openWebUiApiKey: e.target.value})} 
+                />
+                <p className="text-xs text-muted-foreground">
+                  Open-WebUI → avatar → Account → API Keys → Create new key. When set, all AI calls go through Open-WebUI using the model name above.
+                </p>
+              </div>
+
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-2">Ollama Direct (no API key)</p>
+
               <div className="grid gap-2">
                 <Label htmlFor="ollamaUrl">Ollama URL</Label>
                 <Input 
@@ -71,34 +112,20 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="modelName">Model Name</Label>
+                <Label htmlFor="ollamaModel">Ollama Model Name</Label>
                 <Input 
-                  id="modelName" 
+                  id="ollamaModel"
+                  placeholder="qwen2.5:14b"
                   value={formData.ollamaModel} 
                   onChange={e => setFormData({...formData, ollamaModel: e.target.value})} 
                 />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="openWebUi">Open-WebUI URL</Label>
-                <Input 
-                  id="openWebUi" 
-                  value={formData.openWebUiUrl} 
-                  onChange={e => setFormData({...formData, openWebUiUrl: e.target.value})} 
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="openWebUiApiKey">Open-WebUI API Key</Label>
-                <Input 
-                  id="openWebUiApiKey"
-                  type="password"
-                  placeholder="sk-… (leave blank to use Ollama directly)"
-                  value={formData.openWebUiApiKey} 
-                  onChange={e => setFormData({...formData, openWebUiApiKey: e.target.value})} 
-                />
                 <p className="text-xs text-muted-foreground">
-                  When set, all AI calls route through Open-WebUI — enabling your Joshuaokolo CAD Designer knowledge and prompts.
+                  A model actually pulled in Ollama (e.g. qwen2.5:14b). Only used when no API key is set above.
                 </p>
               </div>
+
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-2">Docker Services</p>
+
               <div className="grid gap-2">
                 <Label htmlFor="cadqueryViewerUrl">CadQuery Viewer URL</Label>
                 <Input 

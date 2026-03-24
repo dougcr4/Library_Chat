@@ -30,6 +30,9 @@ fuser -k "${API_PORT}/tcp"  2>/dev/null && echo "  Cleared port ${API_PORT}" || 
 fuser -k "${VITE_PORT}/tcp" 2>/dev/null && echo "  Cleared port ${VITE_PORT}" || true
 sleep 1
 
+echo "── Applying database schema changes ─────────────────────────────────────"
+pnpm --filter @workspace/db run push 2>&1 | tail -3
+
 echo "── Starting API server (port ${API_PORT}) ────────────────────────────────"
 DATABASE_URL="${DB_URL}" PORT="${API_PORT}" \
   pnpm --filter @workspace/api-server run dev &

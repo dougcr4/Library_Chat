@@ -101,9 +101,10 @@ Rules:
     try {
       modelOutput = await callLlm({
         ollamaUrl: settings.ollamaUrl,
+        ollamaModel: settings.ollamaModel,
         openWebUiUrl: settings.openWebUiUrl,
+        openWebUiModel: (settings as any).openWebUiModel ?? "joshuaokolo-cad-designer",
         openWebUiApiKey: settings.openWebUiApiKey,
-        model: settings.ollamaModel,
         systemPrompt,
         userPrompt,
         timeoutMs: 120_000,

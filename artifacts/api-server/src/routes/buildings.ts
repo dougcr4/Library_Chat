@@ -745,9 +745,10 @@ RULES (violations will break the viewer):
       } else {
         modelOutput = await callLlm({
           ollamaUrl: settings.ollamaUrl,
+          ollamaModel: settings.ollamaModel,
           openWebUiUrl: settings.openWebUiUrl,
+          openWebUiModel: settings.openWebUiModel ?? "joshuaokolo-cad-designer",
           openWebUiApiKey: settings.openWebUiApiKey,
-          model: settings.ollamaModel,
           systemPrompt,
           userPrompt,
           timeoutMs: 180_000,

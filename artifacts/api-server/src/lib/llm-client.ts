@@ -2,29 +2,25 @@
  * Shared LLM client — supports two backends:
  *
  *  1. Open-WebUI  (API key is set in Settings)
+ *     Uses `openWebUiModel` — this can be a pipeline/preset name like
+ *     "joshuaokolo-cad-designer" that only exists inside Open-WebUI.
  *     POST {openWebUiUrl}/api/chat/completions
- *     Payload: { model, messages, stream: false }
- *     Response: { choices[0].message.content: string }
  *
  *  2. Ollama native  (no API key set in Settings)
+ *     Uses `ollamaModel` — must be a model actually pulled in Ollama,
+ *     e.g. "qwen2.5:14b".
  *     POST {ollamaUrl}/api/generate
- *     Payload: { model, system, prompt, stream: false }
- *     Response: { response: string }
  *
  * If an API key IS set but Open-WebUI rejects it (401/403), a clear error
- * is thrown — the user must fix the key in Settings.  We do NOT fall back
- * to Ollama in that case because Open-WebUI model names (pipelines, presets)
- * are not recognised by Ollama directly.
- *
- * If NO API key is set, Ollama is used directly with the model name from
- * Settings (which should be a native Ollama model such as "qwen2.5:14b").
+ * is thrown asking the user to update the key in Settings.
  */
 
 export interface LlmCallOptions {
   ollamaUrl: string;
+  ollamaModel: string;
   openWebUiUrl: string;
+  openWebUiModel: string;
   openWebUiApiKey: string;
-  model: string;
   systemPrompt: string;
   userPrompt: string;
   timeoutMs?: number;
@@ -64,9 +60,10 @@ async function callOllama(
 export async function callLlm(opts: LlmCallOptions): Promise<string> {
   const {
     ollamaUrl,
+    ollamaModel,
     openWebUiUrl,
+    openWebUiModel,
     openWebUiApiKey,
-    model,
     systemPrompt,
     userPrompt,
     timeoutMs = 180_000,
@@ -75,7 +72,7 @@ export async function callLlm(opts: LlmCallOptions): Promise<string> {
   const signal = AbortSignal.timeout(timeoutMs);
 
   if (openWebUiApiKey.trim()) {
-    // API key is set → use Open-WebUI
+    // API key is set → route through Open-WebUI using the Open-WebUI model name
     const url = `${openWebUiUrl.trim()}/api/chat/completions`;
     const res = await fetch(url, {
       method: "POST",
@@ -84,7 +81,7 @@ export async function callLlm(opts: LlmCallOptions): Promise<string> {
         Authorization: `Bearer ${openWebUiApiKey.trim()}`,
       },
       body: JSON.stringify({
-        model,
+        model: openWebUiModel.trim(),
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user",   content: userPrompt   },
@@ -97,8 +94,8 @@ export async function callLlm(opts: LlmCallOptions): Promise<string> {
     if (res.status === 401 || res.status === 403) {
       throw new Error(
         "Open-WebUI rejected the API key (error " + res.status + "). " +
-        "Please generate a new key: Open-WebUI → click your avatar → " +
-        "Account → API Keys → Create, then paste it into Settings here.",
+        "Generate a new key: Open-WebUI → avatar → Account → API Keys → Create, " +
+        "then paste it into Settings.",
       );
     }
 
@@ -115,8 +112,7 @@ export async function callLlm(opts: LlmCallOptions): Promise<string> {
     return content;
 
   } else {
-    // No API key → use Ollama directly
-    // Make sure the model name in Settings is a native Ollama model (e.g. qwen2.5:14b)
-    return callOllama(ollamaUrl, model, systemPrompt, userPrompt, signal);
+    // No API key → use Ollama directly with the Ollama model name
+    return callOllama(ollamaUrl, ollamaModel.trim(), systemPrompt, userPrompt, signal);
   }
 }

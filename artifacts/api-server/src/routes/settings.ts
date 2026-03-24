@@ -6,8 +6,9 @@ import { eq } from "drizzle-orm";
 
 const DEFAULTS = {
   ollamaUrl: "http://localhost:11434",
-  ollamaModel: "joshuaokolo/C3Dv0:latest",
+  ollamaModel: "qwen2.5:14b",
   openWebUiUrl: "http://localhost:3001",
+  openWebUiModel: "joshuaokolo-cad-designer",
   openWebUiApiKey: "",
   cadqueryViewerUrl: "http://localhost:5000",
   jupyterLabUrl: "http://localhost:8888",
@@ -29,6 +30,7 @@ router.get("/settings", async (_req, res) => {
       ollamaUrl: settings.ollamaUrl,
       ollamaModel: settings.ollamaModel,
       openWebUiUrl: settings.openWebUiUrl,
+      openWebUiModel: settings.openWebUiModel ?? DEFAULTS.openWebUiModel,
       openWebUiApiKey: settings.openWebUiApiKey ?? "",
       cadqueryViewerUrl: settings.cadqueryViewerUrl,
       jupyterLabUrl: settings.jupyterLabUrl,
@@ -46,7 +48,6 @@ router.put("/settings", async (req, res) => {
   try {
     const body = UpdateSettingsBody.parse(req.body);
 
-    // Strip undefined fields so partial updates don't overwrite existing values
     const patch = Object.fromEntries(
       Object.entries(body).filter(([, v]) => v !== undefined)
     );
@@ -63,6 +64,7 @@ router.put("/settings", async (req, res) => {
       ollamaUrl: updated.ollamaUrl,
       ollamaModel: updated.ollamaModel,
       openWebUiUrl: updated.openWebUiUrl,
+      openWebUiModel: updated.openWebUiModel ?? DEFAULTS.openWebUiModel,
       openWebUiApiKey: updated.openWebUiApiKey ?? "",
       cadqueryViewerUrl: updated.cadqueryViewerUrl,
       jupyterLabUrl: updated.jupyterLabUrl,

@@ -31,8 +31,9 @@ export type Project = typeof projectsTable.$inferSelect;
 export const settingsTable = pgTable("settings", {
   id: text("id").primaryKey().default("default"),
   ollamaUrl: text("ollama_url").notNull().default("http://localhost:11434"),
-  ollamaModel: text("ollama_model").notNull().default("qwen2.5"),
+  ollamaModel: text("ollama_model").notNull().default("qwen2.5:14b"),
   openWebUiUrl: text("open_web_ui_url").notNull().default("http://localhost:3001"),
+  openWebUiModel: text("open_web_ui_model").notNull().default("joshuaokolo-cad-designer"),
   cadqueryViewerUrl: text("cadquery_viewer_url").notNull().default("http://localhost:5000"),
   jupyterLabUrl: text("jupyter_lab_url").notNull().default("http://localhost:8888"),
   jupyterLabWorkDir: text("jupyter_lab_work_dir").notNull().default(""),

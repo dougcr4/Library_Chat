@@ -16,7 +16,8 @@ router.post("/fix-design", async (req, res) => {
       return;
     }
 
-    const { ollamaUrl, openWebUiUrl, openWebUiApiKey, ollamaModel, sharedDesignsPath } = settings;
+    const { ollamaUrl, ollamaModel, openWebUiUrl, openWebUiApiKey, sharedDesignsPath } = settings;
+    const openWebUiModel = (settings as any).openWebUiModel ?? "joshuaokolo-cad-designer";
 
     if (!ollamaUrl || !ollamaModel) {
       res.status(400).json({ error: "Ollama URL and model must be configured in Settings" });
@@ -27,7 +28,6 @@ router.post("/fix-design", async (req, res) => {
       return;
     }
 
-    // Read the current script from disk
     const pyPath = join(sharedDesignsPath, "latest_design.py");
     let currentScript: string;
     try {
@@ -37,7 +37,6 @@ router.post("/fix-design", async (req, res) => {
       return;
     }
 
-    // Optional error message the user can pass from the viewer
     const errorMsg: string = typeof req.body?.error === "string" ? req.body.error.trim() : "";
 
     const systemPrompt = `You are a CadQuery expert. You will be given a Python CadQuery script that has an error.
@@ -61,8 +60,8 @@ Rules:
       : `Review this CadQuery script and fix any errors (undefined variables, deprecated methods, syntax problems):\n\n${currentScript}`;
 
     const modelOutput = await callLlm({
-      ollamaUrl, openWebUiUrl, openWebUiApiKey,
-      model: ollamaModel,
+      ollamaUrl, ollamaModel,
+      openWebUiUrl, openWebUiModel, openWebUiApiKey,
       systemPrompt, userPrompt,
       timeoutMs: 120_000,
     });

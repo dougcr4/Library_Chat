@@ -16,7 +16,8 @@ router.post("/refine-design", async (req, res) => {
       return;
     }
 
-    const { ollamaUrl, openWebUiUrl, openWebUiApiKey, ollamaModel, sharedDesignsPath } = settings;
+    const { ollamaUrl, ollamaModel, openWebUiUrl, openWebUiApiKey, sharedDesignsPath } = settings;
+    const openWebUiModel = (settings as any).openWebUiModel ?? "joshuaokolo-cad-designer";
 
     if (!ollamaUrl || !ollamaModel) {
       res.status(400).json({ error: "Ollama URL and model must be configured in Settings" });
@@ -33,7 +34,6 @@ router.post("/refine-design", async (req, res) => {
       return;
     }
 
-    // Read the current script from disk
     const pyPath = join(sharedDesignsPath, "latest_design.py");
     let currentScript: string;
     try {
@@ -65,8 +65,8 @@ RULES (violations will crash the viewer):
     const userPrompt = `Current script:\n\`\`\`python\n${currentScript}\n\`\`\`\n\nInstruction: ${instruction}`;
 
     const modelOutput = await callLlm({
-      ollamaUrl, openWebUiUrl, openWebUiApiKey,
-      model: ollamaModel,
+      ollamaUrl, ollamaModel,
+      openWebUiUrl, openWebUiModel, openWebUiApiKey,
       systemPrompt, userPrompt,
       timeoutMs: 120_000,
     });
