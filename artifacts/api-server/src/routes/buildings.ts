@@ -659,11 +659,11 @@ router.post("/buildings/generate", async (req, res) => {
     const dkCz = Math.round(floorT / 2);
 
     // ── Standard window cuts + base script (all pre-computed, no LLM needed) ─
-    // Side windows: box cut through wall thickness, 1350mm wide × 1400mm tall
-    // Sill at 900mm above floor slab top → window centre Z = floorT + 900 + 700
-    const winW   = 1350;   // window opening width  (along wall face)
-    const winH   = 1400;   // window opening height
-    const winSill = 900;   // height of sill above floor slab top
+    // Side windows: box cut through wall thickness, 975mm wide × 1940mm tall (portrait)
+    // Sill at 300mm above floor slab top → window centre Z = floorT + 300 + 970
+    const winW   = 975;    // window opening width  (along wall face)
+    const winH   = 1940;   // window opening height
+    const winSill = 300;   // height of sill above floor slab top
     const winCz  = Math.round(floorT + winSill + winH / 2);
     const winCutD = wallT + 40;  // cut depth: slightly wider than wall for clean boolean
 
