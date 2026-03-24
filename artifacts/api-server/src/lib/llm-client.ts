@@ -1,17 +1,23 @@
 /**
  * Shared LLM client — supports two backends:
  *
- *  1. Ollama native  (no API key set, or Open-WebUI returns 401)
- *     POST {ollamaUrl}/api/generate
- *     Payload: { model, system, prompt, stream: false }
- *     Response: { response: string }
- *
- *  2. OpenAI-compatible  (API key set — routes through Open-WebUI)
+ *  1. Open-WebUI  (API key is set in Settings)
  *     POST {openWebUiUrl}/api/chat/completions
  *     Payload: { model, messages, stream: false }
  *     Response: { choices[0].message.content: string }
  *
- * If Open-WebUI returns 401 the client automatically falls back to Ollama.
+ *  2. Ollama native  (no API key set in Settings)
+ *     POST {ollamaUrl}/api/generate
+ *     Payload: { model, system, prompt, stream: false }
+ *     Response: { response: string }
+ *
+ * If an API key IS set but Open-WebUI rejects it (401/403), a clear error
+ * is thrown — the user must fix the key in Settings.  We do NOT fall back
+ * to Ollama in that case because Open-WebUI model names (pipelines, presets)
+ * are not recognised by Ollama directly.
+ *
+ * If NO API key is set, Ollama is used directly with the model name from
+ * Settings (which should be a native Ollama model such as "qwen2.5:14b").
  */
 
 export interface LlmCallOptions {
@@ -69,6 +75,7 @@ export async function callLlm(opts: LlmCallOptions): Promise<string> {
   const signal = AbortSignal.timeout(timeoutMs);
 
   if (openWebUiApiKey.trim()) {
+    // API key is set → use Open-WebUI
     const url = `${openWebUiUrl.trim()}/api/chat/completions`;
     const res = await fetch(url, {
       method: "POST",
@@ -88,8 +95,11 @@ export async function callLlm(opts: LlmCallOptions): Promise<string> {
     });
 
     if (res.status === 401 || res.status === 403) {
-      console.warn(`Open-WebUI returned ${res.status} — API key invalid, expired, or not permitted. Falling back to Ollama.`);
-      return callOllama(ollamaUrl, model, systemPrompt, userPrompt, signal);
+      throw new Error(
+        "Open-WebUI rejected the API key (error " + res.status + "). " +
+        "Please generate a new key: Open-WebUI → click your avatar → " +
+        "Account → API Keys → Create, then paste it into Settings here.",
+      );
     }
 
     if (!res.ok) {
@@ -105,6 +115,8 @@ export async function callLlm(opts: LlmCallOptions): Promise<string> {
     return content;
 
   } else {
+    // No API key → use Ollama directly
+    // Make sure the model name in Settings is a native Ollama model (e.g. qwen2.5:14b)
     return callOllama(ollamaUrl, model, systemPrompt, userPrompt, signal);
   }
 }
