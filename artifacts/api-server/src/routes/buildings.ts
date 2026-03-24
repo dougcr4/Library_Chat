@@ -686,7 +686,7 @@ router.post("/buildings/generate", async (req, res) => {
       `# Side walls: full frontH height then slope-cut to match roof pitch`,
       `left_wall_f  = cq.Workplane("XY").box(${wallT}, ${innerL}, ${frontH}).translate((${-swCx}, ${swCy}, ${swFullCz}))`,
       `right_wall_f = cq.Workplane("XY").box(${wallT}, ${innerL}, ${frontH}).translate((${swCx}, ${swCy}, ${swFullCz}))`,
-      `sw_cut       = cq.Workplane("XY").box(${outerW + 400}, ${swCutL}, ${swCutH}).rotate((0, 0, 0), (1, 0, 0), ${slopeAngleDeg.toFixed(4)}).translate((0, ${swCutTy}, ${swCutTz}))`,
+      `sw_cut       = cq.Workplane("XY").box(${outerW + 400}, ${swCutL}, ${swCutH}).rotate((0, 0, 0), (1, 0, 0), ${(-slopeAngleDeg).toFixed(4)}).translate((0, ${swCutTy}, ${swCutTz}))`,
       `left_wall    = left_wall_f.cut(sw_cut)`,
       `right_wall   = right_wall_f.cut(sw_cut)`,
       ...lhsWindowLines,
