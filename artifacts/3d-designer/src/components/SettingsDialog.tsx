@@ -15,7 +15,7 @@ export default function SettingsDialog({ open, onOpenChange }: { open: boolean, 
   
   const [formData, setFormData] = useState({
     ollamaUrl: "http://localhost:11434",
-    ollamaModel: "qwen2.5:14b",
+    ollamaModel: "JoshuaokoloC3Cv0:latest",
     openWebUiUrl: "http://localhost:3001",
     openWebUiModel: "joshuaokolo-cad-designer",
     openWebUiApiKey: "",

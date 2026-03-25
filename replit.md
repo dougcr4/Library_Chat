@@ -52,7 +52,7 @@ Local project path: `/home/douglas/Desktop/3D-Design/Library-Chat`
 ### Model naming (three distinct things)
 | Name | Value | What it is |
 |------|-------|-----------|
-| Ollama model file | `joshuaokolo/C3Dv0:latest` | Actual LLM weights stored in Ollama (~6.5GB) |
+| Ollama model file | `JoshuaokoloC3Cv0:latest` | Actual LLM weights stored in Ollama (~6.5GB) — case sensitive |
 | Open-WebUI workspace name | `Joshuaokolo CAD Designer` | Display name in the Open-WebUI UI |
 | Open-WebUI API ID | `joshuaokolo-cad-designer` | ID used in API calls — goes in Settings → Open-WebUI Model Name |
 
