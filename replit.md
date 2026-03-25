@@ -42,12 +42,19 @@ Docker containers on Ubuntu managed separately via docker-compose:
 Shared designs folder: `/home/douglas/DockerProjects/LLM-3D/shared_designs`
 Local project path: `/home/douglas/Desktop/3D-Design/Library-Chat`
 
-## LLM Routing (lib/api-server/src/lib/llm-client.ts)
+## LLM Routing (artifacts/api-server/src/lib/llm-client.ts)
 
-- **API key set in Settings** → calls Open-WebUI using `openWebUiModel` (e.g. `joshuaokolo-cad-designer`)
-- **No API key** → calls Ollama directly using `ollamaModel` (e.g. `qwen2.5:14b`)
+- **API key set in Settings** → calls Open-WebUI using `openWebUiModel`
+- **No API key** → calls Ollama directly using `ollamaModel`
 - 401/403 from Open-WebUI throws a clear error — does NOT fall back to Ollama (model names are incompatible)
 - Open-WebUI API key: Admin → Users → enable API Key Auth; then avatar → Account → API Keys → Create
+
+### Model naming (three distinct things)
+| Name | Value | What it is |
+|------|-------|-----------|
+| Ollama model file | `joshuaokolo/C3Dv0:latest` | Actual LLM weights stored in Ollama (~6.5GB) |
+| Open-WebUI workspace name | `Joshuaokolo CAD Designer` | Display name in the Open-WebUI UI |
+| Open-WebUI API ID | `joshuaokolo-cad-designer` | ID used in API calls — goes in Settings → Open-WebUI Model Name |
 
 ## Shell Generation — Pre-computed (NO LLM)
 
