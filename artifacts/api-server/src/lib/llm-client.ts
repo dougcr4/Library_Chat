@@ -104,12 +104,35 @@ export async function callLlm(opts: LlmCallOptions): Promise<string> {
       throw new Error(`Open-WebUI error ${res.status}: ${text}`);
     }
 
-    const data = (await res.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-    const content = data.choices?.[0]?.message?.content ?? "";
-    if (!content) throw new Error("Open-WebUI returned an empty response");
-    return content;
+    const rawText = await res.text();
+    console.log("[llm-client] Open-WebUI raw response:", rawText.slice(0, 300));
+
+    let data: unknown;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      throw new Error(`Open-WebUI returned non-JSON response: ${rawText.slice(0, 200)}`);
+    }
+
+    if (!data || typeof data !== "object") {
+      throw new Error(`Open-WebUI returned unexpected response: ${rawText.slice(0, 200)}`);
+    }
+
+    const obj = data as Record<string, unknown>;
+
+    // Standard OpenAI-compatible format
+    const choices = obj.choices as { message?: { content?: string } }[] | undefined;
+    if (Array.isArray(choices) && choices.length > 0) {
+      const content = choices[0]?.message?.content ?? "";
+      if (content) return content;
+    }
+
+    // Fallback: Ollama-style { response: "..." }
+    if (typeof obj.response === "string" && obj.response) {
+      return obj.response;
+    }
+
+    throw new Error(`Open-WebUI returned no usable content. Full response: ${rawText.slice(0, 300)}`);
 
   } else {
     // No API key → use Ollama directly with the Ollama model name
