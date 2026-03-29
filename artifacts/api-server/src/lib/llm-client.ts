@@ -86,7 +86,7 @@ export async function callLlm(opts: LlmCallOptions): Promise<string> {
           { role: "system", content: systemPrompt },
           { role: "user",   content: userPrompt   },
         ],
-        stream: false,
+        stream: true,
       }),
       signal,
     });
@@ -104,35 +104,30 @@ export async function callLlm(opts: LlmCallOptions): Promise<string> {
       throw new Error(`Open-WebUI error ${res.status}: ${text}`);
     }
 
+    // Collect streamed SSE chunks into a single string
     const rawText = await res.text();
-    console.log("[llm-client] Open-WebUI raw response:", rawText.slice(0, 300));
+    console.log("[llm-client] Open-WebUI raw (first 300):", rawText.slice(0, 300));
 
-    let data: unknown;
-    try {
-      data = JSON.parse(rawText);
-    } catch {
-      throw new Error(`Open-WebUI returned non-JSON response: ${rawText.slice(0, 200)}`);
+    let content = "";
+    for (const line of rawText.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+      const payload = trimmed.slice(5).trim();
+      if (payload === "[DONE]") break;
+      let chunk: unknown;
+      try { chunk = JSON.parse(payload); } catch { continue; }
+      if (!chunk || typeof chunk !== "object") continue;
+      const obj = chunk as Record<string, unknown>;
+      const choices = obj.choices as { delta?: { content?: string } }[] | undefined;
+      if (Array.isArray(choices) && choices.length > 0) {
+        content += choices[0]?.delta?.content ?? "";
+      }
     }
 
-    if (!data || typeof data !== "object") {
-      throw new Error(`Open-WebUI returned unexpected response: ${rawText.slice(0, 200)}`);
+    if (!content) {
+      throw new Error(`Open-WebUI returned no content. Raw (first 300): ${rawText.slice(0, 300)}`);
     }
-
-    const obj = data as Record<string, unknown>;
-
-    // Standard OpenAI-compatible format
-    const choices = obj.choices as { message?: { content?: string } }[] | undefined;
-    if (Array.isArray(choices) && choices.length > 0) {
-      const content = choices[0]?.message?.content ?? "";
-      if (content) return content;
-    }
-
-    // Fallback: Ollama-style { response: "..." }
-    if (typeof obj.response === "string" && obj.response) {
-      return obj.response;
-    }
-
-    throw new Error(`Open-WebUI returned no usable content. Full response: ${rawText.slice(0, 300)}`);
+    return content;
 
   } else {
     // No API key → use Ollama directly with the Ollama model name
